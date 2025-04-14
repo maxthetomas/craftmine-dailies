@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ru.maxthetomas.craftminedailies.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "common.MineCraftingMenuMixin",
+    "common.PlayerListMixin"
+  ],
+  "client": [
+    "client.HudMixin",
+    "client.IntegratedServerMixin",
+    "client.PauseScreenMixin",
+    "client.ScreenInvoker",
+    "client.TitleScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

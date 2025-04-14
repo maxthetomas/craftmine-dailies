@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "craftminedailies",
+  "version": "${version}",
+  "name": "Dailies",
+  "description": "Adds daily runs to 25w14craftmine",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/craftminedailies/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "ru.maxthetomas.craftminedailies.client.CraftmineDailiesClient"
+    ],
+    "main": [
+      "ru.maxthetomas.craftminedailies.CraftmineDailies"
+    ]
+  },
+  "mixins": [
+    "craftminedailies.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "1.21.6-alpha.25.14.craftmine"
+  },
+  "accessWidener": "craftminedailies.accesswidener"
+}
