@@ -5,11 +5,13 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "common.MineCraftingMenuMixin",
-    "common.PlayerListMixin"
+    "common.PlayerListMixin",
+    "common.ServerLevelAccessor"
   ],
   "client": [
     "client.HudMixin",
     "client.IntegratedServerMixin",
+    "client.MinecraftAccessor",
     "client.PauseScreenMixin",
     "client.ScreenInvoker",
     "client.TitleScreenMixin"

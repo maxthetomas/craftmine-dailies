@@ -8,6 +8,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import ru.maxthetomas.craftminedailies.mixin.common.ServerLevelAccessor;
+import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
 import ru.maxthetomas.craftminedailies.util.WorldCreationUtil;
 
 import java.io.IOException;
@@ -78,8 +80,9 @@ public class CraftmineDailies implements ModInitializer {
             if (ENDED) return;
             if (!s.isMine()) return;
             if (s.isMineCompleted()) {
-                dailyEnded(s.isMineWon(), s.theGame().overworld()
-                        .mineData.getExperienceToDrop());
+                dailyEnded(s.isMineWon(),
+                        ((ServerLevelAccessor) s.theGame().overworld()).getMineData()
+                                .getExperienceToDrop());
                 return;
             }
 
@@ -100,6 +103,10 @@ public class CraftmineDailies implements ModInitializer {
 
     public static void startDaily() {
         WorldCreationUtil.createAndLoadDaily("_daily", todayDailySeed);
+    }
+
+    public static void openLeaderboard() {
+        Minecraft.getInstance().setScreen(new LeaderboardScreen());
     }
 
     public static void dailyStarted(long gameTime) {

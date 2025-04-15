@@ -39,6 +39,13 @@ public abstract class TitleScreenMixin {
                         }).bounds(instance.width / 2 - 100, instance.height / 4 + 48 + 24 * 2, 200, 20).build()
         );
 
+        ((ScreenInvoker) instance).callAddRenderableWidget(
+                Button.builder(Component.translatable("craftminedailies.screens.title.leaderboard"),
+                        (but) -> {
+                            CraftmineDailies.openLeaderboard();
+                        }).bounds(instance.width / 2 - 124, instance.height / 4 + 48 + 24 * 2, 20, 20).build()
+        );
+
         return guiEventListener;
     }
 
@@ -50,7 +57,7 @@ public abstract class TitleScreenMixin {
         var y = screen.height / 4 + 48 + 24 * 2 + 8;
 
         startButton.active = CraftmineDailies.shouldAllowDaily();
-        
+
         // Background
         guiGraphics.fill(x - 3, y - 5, x + 44, y + 9, 0xAA000000);
         // Timer text
@@ -60,6 +67,6 @@ public abstract class TitleScreenMixin {
 
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lcom/mojang/realmsclient/gui/screens/RealmsNotificationsScreen;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V"))
     public void realmsRedirect(RealmsNotificationsScreen instance, GuiGraphics guiGraphics, int i, int j, float f) {
-
+        // Ignore realms
     }
 }
