@@ -1,11 +1,14 @@
 package ru.maxthetomas.craftminedailies;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import ru.maxthetomas.craftminedailies.mixin.common.ServerLevelAccessor;
@@ -14,6 +17,7 @@ import ru.maxthetomas.craftminedailies.util.WorldCreationUtil;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -177,6 +181,49 @@ public class CraftmineDailies implements ModInitializer {
             lastPlayedSeed = Long.parseLong(stringSeed);
         } catch (Exception e) {
             lastPlayedSeed = -1;
+        }
+    }
+
+    private static void dumpData() {
+        var json = new JsonObject();
+
+        var effects = new JsonObject();
+        BuiltInRegistries.WORLD_EFFECT.entrySet().forEach(entry -> {
+            var effect = entry.getValue();
+            var key = entry.getKey().location().toString();
+            var effectJson = new JsonObject();
+            effectJson.addProperty("weight", effect.randomWeight());
+            effectJson.addProperty("multiplayer_only", effect.multiplayerOnly());
+            effectJson.addProperty("unlock_mode", effect.unlockMode().toString().toLowerCase());
+
+            var incompat = new JsonArray();
+            effect.incompatibleWith().forEach(we -> {
+                incompat.add("minecraft:" + we.key());
+            });
+            effectJson.add("incompatible_with", incompat);
+
+            effects.add(key, effectJson);
+        });
+        json.add("effects", effects);
+
+        var sets = new JsonObject();
+        BuiltInRegistries.WORLD_EFFECT_SET.entrySet().forEach(entry -> {
+            var setJson = new JsonObject();
+            var key = entry.getKey().location().toString();
+
+            setJson.addProperty("exclusive", entry.getValue().exclusive());
+
+            var effectList = new JsonArray();
+            entry.getValue().effects().forEach(eff -> effectList.add("minecraft:" + eff.key()));
+            setJson.add("effects", effectList);
+            sets.add(key, setJson);
+        });
+        json.add("effect_sets", sets);
+
+        try {
+            Files.writeString(Path.of("./effect_json_data.json"), json.toString(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }
