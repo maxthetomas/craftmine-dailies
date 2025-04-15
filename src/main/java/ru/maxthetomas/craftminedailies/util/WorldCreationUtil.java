@@ -35,6 +35,7 @@ import net.minecraft.world.level.storage.PrimaryLevelData;
 import org.slf4j.Logger;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,8 +57,12 @@ public class WorldCreationUtil {
         boolean allowCommands = false;
         boolean hardcore = false;
         Path tempDataPackDir = null;
-
         CreateWorldScreen.queueLoadScreen(minecraft, Component.translatable("createWorld.preparing"));
+
+        try (var access = Minecraft.getInstance().getLevelSource().createAccess(worldName)) {
+            access.deleteLevel();
+        } catch (IOException e) {
+        }
 
         // 1. Load World Creation Context (similar to openCreateWorldScreen)
         PackRepository packRepository = new PackRepository(
@@ -169,7 +174,7 @@ public class WorldCreationUtil {
         primaryLevelData.setDifficultyLocked(true);
         primaryLevelData.setModdedInfo(CraftmineDailies.DAILY_SERVER_BRAND, true);
 
-        var random = RandomSource.create(seed << 4 ^ 0x247261 | seed >> 2);
+        var random = RandomSource.create((seed << 4) ^ 0x24869 ^ (seed >> 2));
 
         var builder = new WeightedList.Builder<WorldEffect>();
         for (WorldEffect worldEffect : BuiltInRegistries.WORLD_EFFECT) {
@@ -180,7 +185,7 @@ public class WorldCreationUtil {
         }
 
         var list = builder.build();
-        var amt = random.nextInt(2, 7);
+        var amt = random.nextInt(5, 13);
         for (int i = 0; i < amt; i++) {
             var effect = list.getRandom(random).get();
 
@@ -193,12 +198,10 @@ public class WorldCreationUtil {
             primaryLevelData.unlockEffect(effect);
         }
 
-        CraftmineDailies.RANDOM_EFFECT_SOURCE = RandomSource.create(seed << 6 ^ 0x24869);
+        CraftmineDailies.RANDOM_EFFECT_SOURCE = RandomSource.create(seed << 6 ^ random.nextInt() | ((seed >> 4) & 0xDF));
 
         // 4. Create World Directory
-        String targetFolder = minecraft
-                .getLevelSource()
-                .getName();
+        String targetFolder = worldName;
 
         Optional<LevelStorageSource.LevelStorageAccess> storageAccessOpt =
                 CreateWorldScreen.createNewWorldDirectory(minecraft, targetFolder, tempDataPackDir);

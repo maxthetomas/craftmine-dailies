@@ -10,9 +10,6 @@
   "icon": "assets/craftminedailies/icon.png",
   "environment": "*",
   "entrypoints": {
-    "client": [
-      "ru.maxthetomas.craftminedailies.client.CraftmineDailiesClient"
-    ],
     "main": [
       "ru.maxthetomas.craftminedailies.CraftmineDailies"
     ]

@@ -5,15 +5,12 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 public class NetworkingManager {
-
-
-    public static void updateDailyRunDetails() {
-
+    public static void updateCurrentRunDetails() {
     }
 
-    public static long getSeed() {
-        return -1;
+    public static void sendCompletedRun() {
     }
+
 
     public record DailyRunInfo(String date, long seed) {
         public static MapCodec<DailyRunInfo> MAP_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(

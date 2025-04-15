@@ -1,4 +1,5 @@
 {
   "craftminedailies.screens.title.start": "Start Daily Run",
-  "craftminedailies.publish": "Daily runs cannot be published!"
+  "craftminedailies.publish": "Daily runs cannot be published!",
+  "craftminedailies.publish.button": "Not in daily"
 }
