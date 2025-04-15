@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class CraftmineDailies implements ModInitializer {
+    public static final String MOD_ID = "craftmine_dailies";
     public static RandomSource RANDOM_EFFECT_SOURCE;
 
     private static Path lastDailySeedPath;

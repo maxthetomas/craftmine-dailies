@@ -7,7 +7,6 @@ import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.network.chat.Component;
-import ru.maxthetomas.craftminedailies.auth.ClientAuth;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -21,8 +20,6 @@ public class LeaderboardScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-
-        ClientAuth.create();
     }
 
     record ProfileData(String name, PlayerSkin skin) {
@@ -47,6 +44,7 @@ public class LeaderboardScreen extends Screen {
             profiles.compute(uuid, (u, pd) -> d);
         });
 
+        // todo: fetch skins when fetching leaderboard data
 //        var profile = minecraft.getMinecraftSessionService().fetchProfile(uuid, true);
 //        minecraft.getSkinManager().getOrLoad(profile.profile()).whenComplete(((playerSkin, throwable) -> {
 //            future.complete(new ProfileData(profile.profile().getName(), playerSkin.orElse(

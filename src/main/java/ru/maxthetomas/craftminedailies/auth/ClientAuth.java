@@ -2,8 +2,10 @@ package ru.maxthetomas.craftminedailies.auth;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.ProfileKeyPair;
+import org.slf4j.Logger;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -14,35 +16,40 @@ import java.security.*;
 import java.util.Base64;
 
 public class ClientAuth {
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     private static ProfileKeyPair keyPair;
+    public static final String DEFAULT_API_HOST = "cd.mxto.ru/api/v1";
+    private static URI BASE_API;
+    private static String apiAccessToken;
 
     public static void create() {
         var mc = Minecraft.getInstance();
+        BASE_API = URI.create(createApiUrl()).normalize();
 
         if (keyPair == null || keyPair.dueRefresh())
             mc.getProfileKeyPairManager().prepareKeyPair().whenComplete((keyPair, error) -> {
                 ClientAuth.keyPair = keyPair.get();
-                tryAuth();
+                tryAuthorizeApi();
             });
     }
 
-
-    public static void tryAuth() {
+    private static void tryAuthorizeApi() {
         if (keyPair == null) return;
 
         var payload = createGetTokenPayload();
 
-        try {
+        try (var client = HttpClient.newHttpClient()) {
             var request = HttpRequest.newBuilder().POST(HttpRequest.BodyPublishers.ofString(payload.toString())).uri(new URI("https://api.maxthetomas.ru/")).build();
-            HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((str, err) -> {
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((str, err) -> {
                 if (err != null) return;
                 var data = JsonParser.parseString(str.body());
+                apiAccessToken = data.getAsJsonObject().get("access_token").getAsString();
             });
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LOGGER.error("Cannot authorize craftmine dailies API", e);
         }
     }
-
 
     private static JsonObject createGetTokenPayload() {
         var random = new SecureRandom().nextLong();
@@ -72,6 +79,23 @@ public class ClientAuth {
         return object;
     }
 
+    static HttpRequest.Builder createRequestBuilder(String path) {
+        if (!path.startsWith("/"))
+            path = "/" + path;
+
+        var builder = HttpRequest.newBuilder().uri(URI.create(BASE_API.toString() + path));
+        builder = updateRequestBuilder(builder);
+        return builder;
+    }
+
+    static HttpRequest.Builder updateRequestBuilder(HttpRequest.Builder builder) {
+        return builder.header("Authorization", "Bearer " + apiAccessToken);
+    }
+
+    public static URI getBaseApiUri() {
+        return BASE_API;
+    }
+
     // Creates and signs verification data using player's private key.
     private static byte[] sign(long random) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
         Signature signature = Signature.getInstance("SHA256withRSA");
@@ -84,10 +108,22 @@ public class ClientAuth {
     }
 
     // Creates a verification for nonce.
-    static byte[] digest(long random) throws NoSuchAlgorithmException {
+    private static byte[] digest(long random) throws NoSuchAlgorithmException {
         var digest = MessageDigest.getInstance("SHA-256");
         digest.update(String.valueOf(random).getBytes(StandardCharsets.UTF_8));
         digest.update("24869".getBytes(StandardCharsets.UTF_8));
         return digest.digest();
+    }
+
+    private static String createApiUrl() {
+        boolean secure = true;
+
+        String host = System.getProperty("cm_dailies_host", DEFAULT_API_HOST);
+
+        if ((host.startsWith("localhost:") && !host.contains("@"))
+                || host.equals("localhost"))
+            secure = false;
+
+        return (secure ? "https" : "http") + "://" + host;
     }
 }
