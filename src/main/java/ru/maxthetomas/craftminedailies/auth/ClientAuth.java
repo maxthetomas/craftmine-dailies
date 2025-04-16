@@ -24,17 +24,16 @@ public class ClientAuth {
     private static String apiAccessToken;
 
     public static void create() {
-        var mc = Minecraft.getInstance();
         BASE_API = URI.create(createApiUrl()).normalize();
+    }
 
+    static void tryAuthorizeApi() {
         if (keyPair == null || keyPair.dueRefresh())
-            mc.getProfileKeyPairManager().prepareKeyPair().whenComplete((keyPair, error) -> {
+            Minecraft.getInstance().getProfileKeyPairManager().prepareKeyPair().whenComplete((keyPair, error) -> {
                 ClientAuth.keyPair = keyPair.get();
                 tryAuthorizeApi();
             });
-    }
 
-    private static void tryAuthorizeApi() {
         if (keyPair == null) return;
 
         var payload = createGetTokenPayload();
@@ -80,12 +79,20 @@ public class ClientAuth {
     }
 
     static HttpRequest.Builder createRequestBuilder(String path) {
+        var builder = createUnauthorizedRequestBuilder(path);
+        builder = updateRequestBuilder(builder);
+        return builder;
+    }
+
+    public static boolean isAuthorized() {
+        return keyPair != null;
+    }
+
+    static HttpRequest.Builder createUnauthorizedRequestBuilder(String path) {
         if (!path.startsWith("/"))
             path = "/" + path;
 
-        var builder = HttpRequest.newBuilder().uri(URI.create(BASE_API.toString() + path));
-        builder = updateRequestBuilder(builder);
-        return builder;
+        return HttpRequest.newBuilder().uri(URI.create(BASE_API.toString() + path));
     }
 
     static HttpRequest.Builder updateRequestBuilder(HttpRequest.Builder builder) {

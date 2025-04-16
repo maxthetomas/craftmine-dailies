@@ -4,6 +4,7 @@
   "package": "ru.maxthetomas.craftminedailies.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "common.LivingEntityInvoker",
     "common.MineCraftingMenuMixin",
     "common.PlayerListMixin",
     "common.PrimaryLevelDataAccessor",

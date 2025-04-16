@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
@@ -15,6 +16,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerUnlock;
@@ -24,15 +26,15 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.mines.WorldEffect;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
+import ru.maxthetomas.craftminedailies.auth.ClientAuth;
 import ru.maxthetomas.craftminedailies.auth.meta.ApiMeta;
-import ru.maxthetomas.craftminedailies.mixin.common.ServerLevelAccessor;
+import ru.maxthetomas.craftminedailies.mixin.common.LivingEntityInvoker;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
 import ru.maxthetomas.craftminedailies.util.EndContext;
 import ru.maxthetomas.craftminedailies.util.WorldCreationUtil;
 import ru.maxthetomas.craftminedailies.util.ends.DeathEndContext;
 import ru.maxthetomas.craftminedailies.util.ends.IllegitimateEndContext;
 import ru.maxthetomas.craftminedailies.util.ends.TimeOutContext;
-import ru.maxthetomas.craftminedailies.util.ends.WinEndContext;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -69,6 +71,7 @@ public class CraftmineDailies implements ModInitializer {
     @Override
     public void onInitialize() {
         lastDailySeedPath = Path.of(FabricLoader.getInstance().getConfigDir().toString() + "/", ".cd_last_played_seed");
+        ClientAuth.create();
         restoreLastPlayedSeed();
         fetchToday();
 
@@ -85,6 +88,9 @@ public class CraftmineDailies implements ModInitializer {
 
             player.addTag(PLAYER_AWARDED_TAG);
             player.giveExperiencePoints(ApiManager.TodayDetails.xp());
+
+            server.schedule(new TickTask(server.getTickCount() + 20, this::showErrorIfUnauthorized));
+
             ENDED = false;
         });
 
@@ -97,6 +103,10 @@ public class CraftmineDailies implements ModInitializer {
         ServerLivingEntityEvents.ALLOW_DEATH.register((entity, damageSource, damageAmt) -> {
             if (!isInDaily()) return true;
             if (!(entity instanceof ServerPlayer player)) return true;
+
+            // Totem edge case
+            if (((LivingEntityInvoker) entity).callCheckTotemDeathProtection(damageSource))
+                return true;
 
             var experience = getPlayerInventoryValue(player, true, 0.5);
             var ctx = new DeathEndContext(experience, getRemainingTime(player.serverLevel().theGame().server()),
@@ -118,9 +128,8 @@ public class CraftmineDailies implements ModInitializer {
             if (!isInDaily()) return;
             if (ENDED) return;
             if (!s.isMine()) return;
-            if (s.isMineCompleted() && s.isMineWon()) {
-                dailyEnded(new WinEndContext(getRemainingTime(s.theGame().server()), ((ServerLevelAccessor) s.theGame().overworld())
-                        .getMineData().getExperienceToDrop()));
+            if (s.isMineCompleted()) {
+                // This is handled by ServerLevelMixin
                 return;
             }
 
@@ -128,7 +137,6 @@ public class CraftmineDailies implements ModInitializer {
                 dailyStarted(s.getGameTime());
                 return;
             }
-
 
             var remainingTime = MAX_GAME_TIME - s.getGameTime() + GAME_TIME_AT_START;
 
@@ -139,6 +147,11 @@ public class CraftmineDailies implements ModInitializer {
 
             REMAINING_TIME_CACHE = remainingTime;
         });
+    }
+
+    private void showErrorIfUnauthorized() {
+        if (ClientAuth.isAuthorized()) return;
+        showErrorMessage(Component.translatable("craftminedailies.errors.unauthorized"), false);
     }
 
     public static void forceUnlocks(ServerPlayer player) {
@@ -157,6 +170,7 @@ public class CraftmineDailies implements ModInitializer {
     }
 
     public static void startDaily() {
+        if (!shouldAllowDaily()) return;
         ApiManager.login();
         WorldCreationUtil.createAndLoadDaily("_daily", ApiManager.TodayDetails);
     }
@@ -205,6 +219,19 @@ public class CraftmineDailies implements ModInitializer {
 
     private static void refreshAllDailies() {
 
+    }
+
+    public static void showErrorMessage(Component component, boolean resetDaily) {
+        Minecraft.getInstance().getChatListener().handleSystemMessage(Component.translatable("craftminedailies.errors.base" + (resetDaily ? "_with_reset" : ""), component)
+                .withStyle(ChatFormatting.RED), false);
+
+        if (resetDaily) {
+            resetDailyProgression();
+        }
+    }
+
+    private static void resetDailyProgression() {
+        lastPlayedSeed = -1;
     }
 
     public static boolean shouldAllowDaily() {
