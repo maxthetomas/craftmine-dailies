@@ -3,8 +3,10 @@ package ru.maxthetomas.craftminedailies.auth;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.players.PlayerUnlock;
 import net.minecraft.world.level.mines.WorldEffect;
 
 import java.net.URI;
@@ -40,7 +42,7 @@ public class ApiManager {
     }
 
     public record DailyDetails(int xp, int mineCrafterLevel, long seed,
-                               List<String> effects, List<String> unlockedEffects) {
+                               List<String> effects, List<String> unlockedEffects, List<String> playerUnlocks) {
         public List<WorldEffect> getEffects() {
             return effects.stream().map(v -> BuiltInRegistries.WORLD_EFFECT
                     .get(ResourceLocation.parse(v)).get().value()).toList();
@@ -51,6 +53,10 @@ public class ApiManager {
                     .get(ResourceLocation.parse(v)).get().value()).toList();
         }
 
+        public List<Holder.Reference<PlayerUnlock>> getForcedPlayerUnlocks() {
+            return playerUnlocks().stream().map(v -> BuiltInRegistries.PLAYER_UNLOCK.get(ResourceLocation.parse(v)).get()).toList();
+        }
+
         public static DailyDetails fromJson(JsonObject object) {
             var seed = Long.parseLong(object.get("seed").getAsString());
             var crafterLevel = object.get("mine_crafter_level").getAsInt();
@@ -58,11 +64,13 @@ public class ApiManager {
 
             var effects = object.getAsJsonArray("effects");
             var unlocked = object.getAsJsonArray("unlocked_effects");
+            var playerUnlocks = object.getAsJsonArray("player_unlocks");
 
             return new DailyDetails(
                     xp, crafterLevel, seed,
                     effects.asList().stream().map(JsonElement::getAsString).toList(),
-                    unlocked.asList().stream().map(JsonElement::getAsString).toList()
+                    unlocked.asList().stream().map(JsonElement::getAsString).toList(),
+                    playerUnlocks.asList().stream().map(JsonElement::getAsString).toList()
             );
         }
     }

@@ -9,10 +9,13 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerUnlock;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.mixin.common.ServerLevelAccessor;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
@@ -56,6 +59,8 @@ public class CraftmineDailies implements ModInitializer {
 
                 if (player.getTags().contains(PLAYER_AWARDED_TAG))
                     return;
+
+                forceUnlocks(serverPlayer.getPlayer());
 
                 player.addTag(PLAYER_AWARDED_TAG);
                 player.giveExperiencePoints(randomExperiencePts);
@@ -119,6 +124,17 @@ public class CraftmineDailies implements ModInitializer {
         });
     }
 
+    public static void forceUnlocks(ServerPlayer player) {
+        for (Holder.Reference<PlayerUnlock> forcedUnlock : ApiManager.TodayDetails.getForcedPlayerUnlocks()) {
+            player.forceUnlock(forcedUnlock);
+
+            DisplayInfo displayInfo = ((PlayerUnlock) forcedUnlock.value()).display();
+            if (displayInfo.shouldAnnounceChat()) {
+                player.sendSystemMessage(displayInfo.getType().createPlayerUnlockAnnouncement(forcedUnlock, player));
+            }
+        }
+    }
+
     public static void fetchToday() {
         ApiManager.updateDailyDetails().whenComplete((data, error) -> {
             if (error != null) {
@@ -162,6 +178,7 @@ public class CraftmineDailies implements ModInitializer {
 
         // Reset
         GAME_TIME_AT_START = -1;
+        REMAINING_TIME_CACHE = -1;
     }
 
     public static boolean shouldRenderInGameTimer() {
@@ -217,6 +234,7 @@ public class CraftmineDailies implements ModInitializer {
             effectJson.addProperty("weight", effect.randomWeight());
             effectJson.addProperty("multiplayer_only", effect.multiplayerOnly());
             effectJson.addProperty("unlock_mode", effect.unlockMode().toString().toLowerCase());
+            effectJson.addProperty("xp_multiplier", effect.experienceModifier());
 
             var incompat = new JsonArray();
             effect.incompatibleWith().forEach(we -> {
@@ -241,6 +259,27 @@ public class CraftmineDailies implements ModInitializer {
             sets.add(key, setJson);
         });
         json.add("effect_sets", sets);
+
+        var unlocks = new JsonObject();
+        BuiltInRegistries.PLAYER_UNLOCK.entrySet().forEach(entry -> {
+            var unlockJson = new JsonObject();
+            var key = entry.getKey().location().toString();
+
+            var disablesArray = new JsonArray();
+            entry.getValue().disables().forEach(disable -> {
+                disablesArray.add(disable.getRegisteredName());
+            });
+
+
+            unlockJson.add("disables", disablesArray);
+            unlockJson.addProperty("price", entry.getValue().unlockPrice());
+
+            entry.getValue().parent().ifPresentOrElse((unlock) ->
+                    unlockJson.addProperty("parent", unlock.getRegisteredName()), () -> unlockJson.addProperty("parent", "minecraft:empty"));
+
+            unlocks.add(key, unlockJson);
+        });
+        json.add("unlocks", unlocks);
 
         try {
             Files.writeString(Path.of("./effect_json_data.json"), json.toString(), StandardCharsets.UTF_8);
