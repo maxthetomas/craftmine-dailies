@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -14,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +24,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.mines.WorldEffect;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
+import ru.maxthetomas.craftminedailies.auth.meta.ApiMeta;
 import ru.maxthetomas.craftminedailies.mixin.common.ServerLevelAccessor;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
 import ru.maxthetomas.craftminedailies.util.EndContext;
@@ -45,14 +46,21 @@ public class CraftmineDailies implements ModInitializer {
     private static Path lastDailySeedPath;
     private static long lastPlayedSeed = -1;
 
-    private static long todayDailySeed = -1;
-
     public static final String DAILY_SERVER_BRAND = "_cm_daily";
     public static final String PLAYER_AWARDED_TAG = "_cm_daily_xp_awarded";
     public static final long MAX_GAME_TIME = 20 * 60 * 30;
     protected static long GAME_TIME_AT_START = -1;
 
+    public static final float XP_MULT = 100;
+
+    public static final Component BUTTON_TEXT_OK = Component.translatable("craftminedailies.button.start.active");
+    public static final Component BUTTON_TEXT_PLAYED = Component.translatable("craftminedailies.button.start.played");
+    public static final Component BUTTON_TEXT_LOADING = Component.translatable("craftminedailies.button.start.loading");
+    public static final Component BUTTON_TEXT_NETWORK_ISSUE = Component.translatable("craftminedailies.button.start.issue");
+
     public static long REMAINING_TIME_CACHE = -1;
+
+    public static DeathEndContext LAST_DEATH_CONTEXT = null;
 
     // If run has ended for any reason.
     protected static boolean ENDED = false;
@@ -62,32 +70,26 @@ public class CraftmineDailies implements ModInitializer {
     public void onInitialize() {
         lastDailySeedPath = Path.of(FabricLoader.getInstance().getConfigDir().toString() + "/", ".cd_last_played_seed");
         restoreLastPlayedSeed();
+        fetchToday();
 
         ServerPlayConnectionEvents.JOIN.register((serverPlayer,
                                                   packetListener, server) -> {
-            if (isInDaily()) {
-                var randomExperiencePts = ApiManager.TodayDetails.xp();
-                var player = serverPlayer.getPlayer();
+            if (!isInDaily()) return;
 
-                if (player.getTags().contains(PLAYER_AWARDED_TAG))
-                    return;
+            var player = serverPlayer.getPlayer();
 
-                forceUnlocks(serverPlayer.getPlayer());
+            if (player.getTags().contains(PLAYER_AWARDED_TAG))
+                return;
 
-                player.addTag(PLAYER_AWARDED_TAG);
-                player.giveExperiencePoints(randomExperiencePts);
-                ENDED = false;
-            }
+            forceUnlocks(serverPlayer.getPlayer());
+
+            player.addTag(PLAYER_AWARDED_TAG);
+            player.giveExperiencePoints(ApiManager.TodayDetails.xp());
+            ENDED = false;
         });
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             if (!isInDaily()) {
-                return;
-            }
-
-            if (server.theGame().getAllLevels().size() > 1) {
-                // Re-join - Untrusted.
-                server.stopServer(server.theGame());
                 return;
             }
         });
@@ -97,16 +99,13 @@ public class CraftmineDailies implements ModInitializer {
             if (!(entity instanceof ServerPlayer player)) return true;
 
             var experience = getPlayerInventoryValue(player, true, 0.5);
-            dailyEnded(new DeathEndContext(experience, getRemainingTime(player.serverLevel().theGame().server()),
-                    player, damageSource));
+            var ctx = new DeathEndContext(experience, getRemainingTime(player.serverLevel().theGame().server()),
+                    player, damageSource);
+            dailyEnded(ctx);
+
+            LAST_DEATH_CONTEXT = ctx;
 
             return true;
-        });
-
-        ServerPlayerEvents.AFTER_RESPAWN.register((a, b, resp) -> {
-            if (!isInDaily()) return;
-            a.disconnect();
-            b.disconnect();
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((player, server) -> {
@@ -127,6 +126,7 @@ public class CraftmineDailies implements ModInitializer {
 
             if (GAME_TIME_AT_START == -1) {
                 dailyStarted(s.getGameTime());
+                return;
             }
 
 
@@ -153,36 +153,39 @@ public class CraftmineDailies implements ModInitializer {
     }
 
     public static void fetchToday() {
-        ApiManager.updateDailyDetails().whenComplete((data, error) -> {
-            if (error != null) {
-                todayDailySeed = -1;
-                return;
-            }
-            todayDailySeed = data.seed();
-        });
+        ApiManager.updateDailyDetails();
     }
 
     public static void startDaily() {
+        ApiManager.login();
         WorldCreationUtil.createAndLoadDaily("_daily", ApiManager.TodayDetails);
     }
 
-    public static void openLeaderboard() {
-        Minecraft.getInstance().setScreen(new LeaderboardScreen());
+    public static void openLeaderboard(boolean showSelf) {
+        Minecraft.getInstance().setScreen(new LeaderboardScreen(showSelf));
         fetchToday();
     }
 
     public static void dailyStarted(long gameTime) {
+        // waiting for first tick with player
+        if (Minecraft.getInstance().getSingleplayerServer().theGame().playerList().getPlayers().isEmpty())
+            return;
+
+
         GAME_TIME_AT_START = gameTime;
 
         lastPlayedSeed = Minecraft.getInstance().getSingleplayerServer().theGame()
                 .getWorldData().worldGenOptions().seed();
 
         storeLastPlayedSeed();
+
+        ApiManager.submitRunStart(ApiMeta.createMeta());
     }
 
     public static void dailyEnded(EndContext endContext) {
         ENDED = true;
-        var server = Minecraft.getInstance().getSingleplayerServer();
+
+        ApiManager.submitRunEnd(endContext, ApiMeta.createMeta());
 
         // Reset
         GAME_TIME_AT_START = -1;
@@ -205,9 +208,22 @@ public class CraftmineDailies implements ModInitializer {
     }
 
     public static boolean shouldAllowDaily() {
-        if (lastPlayedSeed == todayDailySeed) return false;
-        if (todayDailySeed == -1) return false;
+        if (ApiManager.TodayDetails == null) return false;
+        if (lastPlayedSeed == ApiManager.TodayDetails.seed()) return false;
         return true;
+    }
+
+    public static Component getStartDailyButtonText() {
+        if (ApiManager.DailyFetchError)
+            return BUTTON_TEXT_NETWORK_ISSUE;
+
+        if (ApiManager.TodayDetails == null)
+            return BUTTON_TEXT_LOADING;
+
+        if (lastPlayedSeed == ApiManager.TodayDetails.seed())
+            return BUTTON_TEXT_PLAYED;
+
+        return BUTTON_TEXT_OK;
     }
 
     public static boolean isInDaily() {
@@ -218,7 +234,7 @@ public class CraftmineDailies implements ModInitializer {
     }
 
     // Reimplement inventory value calculation for deaths.
-    public static int getPlayerInventoryValue(ServerPlayer player, boolean ignoreWorldEffects, double extraScale) {
+    public static int getPlayerInventoryValue(ServerPlayer player, boolean ignoreSelfPlacedWorldEffects, double extraScale) {
         double totalXp = 0F;
         for (ItemStack stack : player.getInventory()) {
             var worldMods = stack.get(DataComponents.WORLD_MODIFIERS);
@@ -230,14 +246,19 @@ public class CraftmineDailies implements ModInitializer {
         }
 
         double multiplier = 1.0F;
-        if (!ignoreWorldEffects) {
-            for (WorldEffect effect : player.level().getActiveEffects()) {
-                multiplier += effect.experienceModifier();
+        var todayEffects = ApiManager.TodayDetails.getEffects();
+        for (WorldEffect effect : player.level().getActiveEffects()) {
+            if (ignoreSelfPlacedWorldEffects) {
+                // Check that the effect is not forced
+                if (!todayEffects.contains(effect))
+                    continue;
             }
+
+            multiplier *= effect.experienceModifier();
         }
 
         multiplier *= player.getAttributeValue(Attributes.EXPERIENCE_GAIN_MODIFIER);
-        return (int) (totalXp * multiplier);
+        return (int) (totalXp * multiplier * extraScale * XP_MULT);
     }
 
     private static boolean isDailyWorld(ServerLevel level) {

@@ -18,4 +18,9 @@ public class ServerLevelMixin {
         if (CraftmineDailies.isInDaily())
             ci.cancel();
     }
+
+    @Inject(method = "cleanInventoryAndReward", at = @At("HEAD"), cancellable = true)
+    void cleanInventory(ServerPlayer serverPlayer, float f, CallbackInfo ci) {
+
+    }
 }

@@ -15,6 +15,14 @@ public abstract class EndContext {
 
     public abstract String getStringName();
 
+    public int getExperience() {
+        return experience;
+    }
+
+    public int getRemainingTime() {
+        return remainingTime;
+    }
+
     public JsonObject getAsJson() {
         var json = new JsonObject();
         json.addProperty("type", getStringName());

@@ -8,6 +8,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.players.PlayerUnlock;
 import net.minecraft.world.level.mines.WorldEffect;
+import ru.maxthetomas.craftminedailies.auth.meta.ApiMeta;
+import ru.maxthetomas.craftminedailies.util.EndContext;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -18,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class ApiManager {
     public static DailyDetails TodayDetails;
+    public static boolean DailyFetchError;
 
     public static void login() {
         ClientAuth.create();
@@ -26,12 +29,20 @@ public class ApiManager {
 
     public static CompletableFuture<DailyDetails> updateDailyDetails() {
         var future = new CompletableFuture<DailyDetails>();
+        DailyFetchError = false;
+        TodayDetails = null;
 
         try (var client = HttpClient.newHttpClient()) {
             client.sendAsync(HttpRequest.newBuilder().uri(URI.create("http://localhost:2486/today"))
                     .GET().build(), HttpResponse.BodyHandlers.ofString()).whenComplete((data, error) -> {
+                if (error != null) {
+                    DailyFetchError = true;
+                    TodayDetails = null;
+                }
+
                 var json = JsonParser.parseString(data.body());
                 TodayDetails = DailyDetails.fromJson(json.getAsJsonObject());
+                DailyFetchError = false;
                 future.complete(TodayDetails);
             });
         } catch (Exception e) {
@@ -39,6 +50,14 @@ public class ApiManager {
         }
 
         return future;
+    }
+
+    public static void submitRunStart(ApiMeta meta) {
+
+    }
+
+    public static void submitRunEnd(EndContext context, ApiMeta meta) {
+
     }
 
     public record DailyDetails(int xp, int mineCrafterLevel, long seed,

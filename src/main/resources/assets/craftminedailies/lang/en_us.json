@@ -1,7 +1,13 @@
 {
-  "craftminedailies.screens.title.start": "Start Daily Run",
+  "craftminedailies.button.start.active": "Start Daily Run",
+  "craftminedailies.button.start.played": "Come back tomorrow!",
+  "craftminedailies.button.start.loading": "Loading...",
+  "craftminedailies.button.start.issue": "Could not get info!",
+  "craftminedailies.button.leaderboards": "Leaderboard",
   "craftminedailies.publish": "Daily runs cannot be published!",
   "craftminedailies.publish.button": "Not in daily",
   "craftminedailies.item.base": "Daily Mine base",
-  "craftminedailies.item.mine": "Daily Mine"
+  "craftminedailies.item.mine": "Daily Mine",
+  "craftminedailies.death.score": "Experience (items): %s",
+  "craftminedailies.death.time": "Remaining time: %s"
 }

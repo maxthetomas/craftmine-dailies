@@ -32,6 +32,7 @@ public abstract class TitleScreenMixin {
                     ordinal = 2))
     private GuiEventListener preventThirdWidgetAddition(TitleScreen instance, GuiEventListener guiEventListener) {
         startDailyButton = ((ScreenInvoker) instance).callAddRenderableWidget(createStartDailyButton(instance.width, instance.height));
+        startDailyButton.active = false;
         ((ScreenInvoker) instance).callAddRenderableWidget(createLeaderboardButton(instance.width, instance.height));
 
         return guiEventListener;
@@ -39,7 +40,7 @@ public abstract class TitleScreenMixin {
 
     @Unique
     private static Button createStartDailyButton(int screenWidth, int screenHeight) {
-        return Button.builder(Component.translatable("craftminedailies.screens.title.start"),
+        return Button.builder(Component.translatable("craftminedailies.button.start.loading"),
                 (but) -> {
                     CraftmineDailies.startDaily();
                 }).bounds(screenWidth / 2 - 100, screenHeight / 4 + 48 + 24 * 2, 200, 20).build();
@@ -48,9 +49,9 @@ public abstract class TitleScreenMixin {
     @Unique
     private static Button createLeaderboardButton(int screenWidth, int screenHeight) {
         var button = SpriteIconButton.builder(
-                        Component.translatable("craftminedailies.screens.title.leaderboard"),
+                        Component.translatable("craftminedailies.button.leaderboards"),
                         (but) -> {
-                            CraftmineDailies.openLeaderboard();
+                            CraftmineDailies.openLeaderboard(false);
                         }, true)
                 .sprite(ResourceLocation.fromNamespaceAndPath(CraftmineDailies.MOD_ID, "icon/leaderboards"),
                         15, 15)
@@ -70,6 +71,7 @@ public abstract class TitleScreenMixin {
         var x = screen.width / 2 + 100 + 5;
         var y = screen.height / 4 + 48 + 24 * 2 + 8;
 
+        startDailyButton.setMessage(CraftmineDailies.getStartDailyButtonText());
         startDailyButton.active = CraftmineDailies.shouldAllowDaily();
 
         // Background

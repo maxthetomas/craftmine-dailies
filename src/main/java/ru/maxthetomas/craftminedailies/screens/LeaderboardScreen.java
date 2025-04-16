@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class LeaderboardScreen extends Screen {
-    public LeaderboardScreen() {
+    public LeaderboardScreen(boolean showSelf) {
         super(Component.translatable("craftminedailies.screen.leaderboard.title"));
     }
 

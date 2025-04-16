@@ -1,0 +1,72 @@
+package ru.maxthetomas.craftminedailies.auth.meta;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.Holder;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.mines.WorldEffect;
+import ru.maxthetomas.craftminedailies.CraftmineDailies;
+import ru.maxthetomas.craftminedailies.mixin.common.ServerPlayerAccessor;
+
+import java.util.List;
+import java.util.UUID;
+
+// Extra metadata to be stored
+public record ApiMeta(
+        long worldSeed, List<String> effects, UUID playerUUID,
+        int playerExperienceLevel, List<String> unlocks, long ticks
+) {
+    public static ApiMeta createMeta() {
+        if (!CraftmineDailies.isInDaily()) return null;
+
+        var server = Minecraft.getInstance().getSingleplayerServer();
+        var level = server.theGame().getAllLevels().stream()
+                .filter(ServerLevel::isMine).findFirst();
+
+        List<String> worldEffects = List.of();
+        if (level.isPresent()) {
+            worldEffects = level.get().getActiveEffects().stream()
+                    .map(WorldEffect::key).toList();
+        }
+
+        UUID playerId = Util.NIL_UUID;
+        int xpLevel = -1;
+        List<String> unlocks = List.of();
+
+        var player = server.theGame().playerList().getPlayers().getFirst();
+        if (player != null) {
+            playerId = player.getUUID();
+            xpLevel = player.totalExperience;
+            unlocks = ((ServerPlayerAccessor) player).getPlayerUnlocks().getActiveUnlocks()
+                    .stream().map(Holder::getRegisteredName).toList();
+        }
+
+        var ticks = server.theGame().overworld().getGameTime();
+
+        return new ApiMeta(
+                server.theGame().overworld().getSeed(),
+                worldEffects, playerId, xpLevel, unlocks, ticks
+        );
+    }
+
+    public JsonObject toJson() {
+        var obj = new JsonObject();
+
+        obj.addProperty("world_seed", worldSeed());
+        obj.addProperty("player_xp", playerExperienceLevel());
+        obj.addProperty("game_time", ticks());
+        obj.addProperty("player_uuid", playerUUID().toString());
+
+        var effects = new JsonArray();
+        this.effects().forEach(effects::add);
+        obj.add("world_effects", effects);
+
+        var unlocks = new JsonArray();
+        this.unlocks().forEach(effects::add);
+        obj.add("player_unlocks", effects);
+
+        return obj;
+    }
+}
