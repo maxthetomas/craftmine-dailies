@@ -1,6 +1,5 @@
 package ru.maxthetomas.craftminedailies.mixin.client;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutElement;
@@ -17,7 +16,7 @@ public class PauseScreenMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/layouts/GridLayout$RowHelper;addChild(Lnet/minecraft/client/gui/layouts/LayoutElement;)Lnet/minecraft/client/gui/layouts/LayoutElement;"
                     , ordinal = 5), method = "createPauseMenu")
     <T extends LayoutElement> T create(GridLayout.RowHelper instance, T layoutElement) {
-        if (!CraftmineDailies.isDailyWorld(Minecraft.getInstance().getSingleplayerServer().theGame().overworld()))
+        if (!CraftmineDailies.isInDaily())
             return instance.addChild(layoutElement);
 
         var btn = Button.builder(Component.translatable("craftminedailies.publish.button"),

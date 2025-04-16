@@ -21,7 +21,7 @@ public abstract class PlayerListMixin {
 
     @Inject(at = @At("HEAD"), method = "setAllowCommandsForAllPlayers", cancellable = true)
     public void setAllowCommands(boolean bl, CallbackInfo ci) {
-        if (!this.players.isEmpty() && CraftmineDailies.isDailyWorld(this.players.getFirst().serverLevel()))
+        if (!this.players.isEmpty() && CraftmineDailies.isInDaily())
             ci.cancel();
     }
 }

@@ -7,7 +7,8 @@
     "common.MineCraftingMenuMixin",
     "common.PlayerListMixin",
     "common.PrimaryLevelDataAccessor",
-    "common.ServerLevelAccessor"
+    "common.ServerLevelAccessor",
+    "common.ServerLevelMixin"
   ],
   "client": [
     "client.DeathScreenMixin",

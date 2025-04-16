@@ -1,6 +1,5 @@
 package ru.maxthetomas.craftminedailies.mixin.client;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -32,7 +31,7 @@ public abstract class DeathScreenMixin extends Screen {
 
     @Inject(at = @At("RETURN"), method = "init", cancellable = true)
     public void init(CallbackInfo ci) {
-        if (!CraftmineDailies.isDailyWorld(Minecraft.getInstance().getSingleplayerServer().theGame().overworld()))
+        if (!CraftmineDailies.isInDaily())
             return;
 
         removeWidget(this.respawnButton);

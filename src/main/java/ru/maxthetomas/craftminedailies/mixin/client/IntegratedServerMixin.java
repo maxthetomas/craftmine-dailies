@@ -14,7 +14,7 @@ import ru.maxthetomas.craftminedailies.CraftmineDailies;
 public class IntegratedServerMixin {
     @Inject(at = @At("HEAD"), method = "publishServer", cancellable = true)
     public void publishGame(TheGame theGame, GameType gameType, boolean bl, int i, CallbackInfoReturnable<Boolean> cir) {
-        if (CraftmineDailies.isDailyWorld(theGame.overworld())) {
+        if (CraftmineDailies.isInDaily()) {
             theGame.playerList().broadcastSystemMessage(Component.translatable("craftminedailies.publish"), true);
             cir.setReturnValue(false);
             cir.cancel();

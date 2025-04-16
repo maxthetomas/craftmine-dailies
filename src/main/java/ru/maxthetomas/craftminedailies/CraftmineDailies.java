@@ -12,14 +12,26 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerUnlock;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.mines.WorldEffect;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.mixin.common.ServerLevelAccessor;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
+import ru.maxthetomas.craftminedailies.util.EndContext;
 import ru.maxthetomas.craftminedailies.util.WorldCreationUtil;
+import ru.maxthetomas.craftminedailies.util.ends.DeathEndContext;
+import ru.maxthetomas.craftminedailies.util.ends.IllegitimateEndContext;
+import ru.maxthetomas.craftminedailies.util.ends.TimeOutContext;
+import ru.maxthetomas.craftminedailies.util.ends.WinEndContext;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -53,7 +65,7 @@ public class CraftmineDailies implements ModInitializer {
 
         ServerPlayConnectionEvents.JOIN.register((serverPlayer,
                                                   packetListener, server) -> {
-            if (isDailyWorld(server.theGame().overworld())) {
+            if (isInDaily()) {
                 var randomExperiencePts = ApiManager.TodayDetails.xp();
                 var player = serverPlayer.getPlayer();
 
@@ -69,43 +81,47 @@ public class CraftmineDailies implements ModInitializer {
         });
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            if (!isDailyWorld(server.theGame().overworld())) {
+            if (!isInDaily()) {
                 return;
             }
 
             if (server.theGame().getAllLevels().size() > 1) {
                 // Re-join - Untrusted.
-                server.stopServer(null);
+                server.stopServer(server.theGame());
                 return;
             }
         });
 
-        ServerLivingEntityEvents.AFTER_DEATH.register((died, source) -> {
-            if (!(died instanceof ServerPlayer player)) return;
-            var str = source.getLocalizedDeathMessage(died).getString();
-            // todo
+        ServerLivingEntityEvents.ALLOW_DEATH.register((entity, damageSource, damageAmt) -> {
+            if (!isInDaily()) return true;
+            if (!(entity instanceof ServerPlayer player)) return true;
+
+            var experience = getPlayerInventoryValue(player, true, 0.5);
+            dailyEnded(new DeathEndContext(experience, getRemainingTime(player.serverLevel().theGame().server()),
+                    player, damageSource));
+
+            return true;
         });
+
         ServerPlayerEvents.AFTER_RESPAWN.register((a, b, resp) -> {
-            if (!isDailyWorld(a.serverLevel().theGame().overworld())) return;
+            if (!isInDaily()) return;
             a.disconnect();
             b.disconnect();
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((player, server) -> {
-            if (isDailyWorld(server.theGame().overworld())
-                    && GAME_TIME_AT_START != -1) {
-                dailyEnded(false, 0);
+            if (isInDaily() && GAME_TIME_AT_START != -1) {
+                dailyEnded(new IllegitimateEndContext(getRemainingTime(server)));
             }
         });
 
         ServerTickEvents.END_WORLD_TICK.register(s -> {
-            if (!isDailyWorld(s.theGame().overworld())) return;
+            if (!isInDaily()) return;
             if (ENDED) return;
             if (!s.isMine()) return;
-            if (s.isMineCompleted()) {
-                dailyEnded(s.isMineWon(),
-                        ((ServerLevelAccessor) s.theGame().overworld()).getMineData()
-                                .getExperienceToDrop());
+            if (s.isMineCompleted() && s.isMineWon()) {
+                dailyEnded(new WinEndContext(getRemainingTime(s.theGame().server()), ((ServerLevelAccessor) s.theGame().overworld())
+                        .getMineData().getExperienceToDrop()));
                 return;
             }
 
@@ -117,7 +133,8 @@ public class CraftmineDailies implements ModInitializer {
             var remainingTime = MAX_GAME_TIME - s.getGameTime() + GAME_TIME_AT_START;
 
             if (remainingTime <= 0) {
-                dailyEnded(false, 0);
+                var player = Minecraft.getInstance().getSingleplayerServer().theGame().playerList().getPlayers().get(0);
+                dailyEnded(new TimeOutContext(getPlayerInventoryValue(player, true, 0.5)));
             }
 
             REMAINING_TIME_CACHE = remainingTime;
@@ -128,7 +145,7 @@ public class CraftmineDailies implements ModInitializer {
         for (Holder.Reference<PlayerUnlock> forcedUnlock : ApiManager.TodayDetails.getForcedPlayerUnlocks()) {
             player.forceUnlock(forcedUnlock);
 
-            DisplayInfo displayInfo = ((PlayerUnlock) forcedUnlock.value()).display();
+            DisplayInfo displayInfo = forcedUnlock.value().display();
             if (displayInfo.shouldAnnounceChat()) {
                 player.sendSystemMessage(displayInfo.getType().createPlayerUnlockAnnouncement(forcedUnlock, player));
             }
@@ -163,22 +180,17 @@ public class CraftmineDailies implements ModInitializer {
         storeLastPlayedSeed();
     }
 
-    public static void dailyEnded(boolean won, int xp) {
+    public static void dailyEnded(EndContext endContext) {
         ENDED = true;
-
         var server = Minecraft.getInstance().getSingleplayerServer();
-
-        server.theGame().tickRateManager().endTickWork();
-        var finalRemainingTime = MAX_GAME_TIME - server.theGame().overworld().getGameTime()
-                + GAME_TIME_AT_START;
-
-        if (won) {
-        } else {
-        }
 
         // Reset
         GAME_TIME_AT_START = -1;
         REMAINING_TIME_CACHE = -1;
+    }
+
+    public static int getRemainingTime(MinecraftServer server) {
+        return (int) (MAX_GAME_TIME - server.theGame().overworld().getGameTime() + GAME_TIME_AT_START);
     }
 
     public static boolean shouldRenderInGameTimer() {
@@ -198,7 +210,37 @@ public class CraftmineDailies implements ModInitializer {
         return true;
     }
 
-    public static boolean isDailyWorld(ServerLevel level) {
+    public static boolean isInDaily() {
+        var server = Minecraft.getInstance().getSingleplayerServer();
+        if (server == null) return false;
+        var overworld = server.theGame().overworld();
+        return isDailyWorld(overworld);
+    }
+
+    // Reimplement inventory value calculation for deaths.
+    public static int getPlayerInventoryValue(ServerPlayer player, boolean ignoreWorldEffects, double extraScale) {
+        double totalXp = 0F;
+        for (ItemStack stack : player.getInventory()) {
+            var worldMods = stack.get(DataComponents.WORLD_MODIFIERS);
+            if (worldMods != null) continue;
+            else if (stack.is(ItemTags.CARRY_OVER)) continue;
+
+            var exchangeValueComponent = stack.getOrDefault(DataComponents.EXCHANGE_VALUE, Item.NO_EXCHANGE);
+            totalXp += exchangeValueComponent.getValue(player, stack);
+        }
+
+        double multiplier = 1.0F;
+        if (!ignoreWorldEffects) {
+            for (WorldEffect effect : player.level().getActiveEffects()) {
+                multiplier += effect.experienceModifier();
+            }
+        }
+
+        multiplier *= player.getAttributeValue(Attributes.EXPERIENCE_GAIN_MODIFIER);
+        return (int) (totalXp * multiplier);
+    }
+
+    private static boolean isDailyWorld(ServerLevel level) {
         return level.theGame().getWorldData().getKnownServerBrands().stream().anyMatch(e -> e.equals(DAILY_SERVER_BRAND));
     }
 
