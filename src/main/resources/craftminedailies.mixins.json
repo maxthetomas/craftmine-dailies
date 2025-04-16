@@ -6,9 +6,11 @@
   "mixins": [
     "common.MineCraftingMenuMixin",
     "common.PlayerListMixin",
+    "common.PrimaryLevelDataAccessor",
     "common.ServerLevelAccessor"
   ],
   "client": [
+    "client.DeathScreenMixin",
     "client.HudMixin",
     "client.IntegratedServerMixin",
     "client.MinecraftAccessor",

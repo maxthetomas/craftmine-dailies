@@ -3,6 +3,8 @@ package ru.maxthetomas.craftminedailies;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -10,7 +12,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
+import net.minecraft.server.level.ServerPlayer;
+import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.mixin.common.ServerLevelAccessor;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
 import ru.maxthetomas.craftminedailies.util.WorldCreationUtil;
@@ -23,12 +26,11 @@ import java.nio.file.Path;
 
 public class CraftmineDailies implements ModInitializer {
     public static final String MOD_ID = "craftminedailies";
-    public static RandomSource RANDOM_EFFECT_SOURCE;
 
     private static Path lastDailySeedPath;
     private static long lastPlayedSeed = -1;
 
-    private static long todayDailySeed = 24871L;
+    private static long todayDailySeed = -1;
 
     public static final String DAILY_SERVER_BRAND = "_cm_daily";
     public static final String PLAYER_AWARDED_TAG = "_cm_daily_xp_awarded";
@@ -49,7 +51,7 @@ public class CraftmineDailies implements ModInitializer {
         ServerPlayConnectionEvents.JOIN.register((serverPlayer,
                                                   packetListener, server) -> {
             if (isDailyWorld(server.theGame().overworld())) {
-                var randomExperiencePts = RANDOM_EFFECT_SOURCE.nextInt(50, 400);
+                var randomExperiencePts = ApiManager.TodayDetails.xp();
                 var player = serverPlayer.getPlayer();
 
                 if (player.getTags().contains(PLAYER_AWARDED_TAG))
@@ -71,6 +73,17 @@ public class CraftmineDailies implements ModInitializer {
                 server.stopServer(null);
                 return;
             }
+        });
+
+        ServerLivingEntityEvents.AFTER_DEATH.register((died, source) -> {
+            if (!(died instanceof ServerPlayer player)) return;
+            var str = source.getLocalizedDeathMessage(died).getString();
+            // todo
+        });
+        ServerPlayerEvents.AFTER_RESPAWN.register((a, b, resp) -> {
+            if (!isDailyWorld(a.serverLevel().theGame().overworld())) return;
+            a.disconnect();
+            b.disconnect();
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((player, server) -> {
@@ -106,12 +119,23 @@ public class CraftmineDailies implements ModInitializer {
         });
     }
 
+    public static void fetchToday() {
+        ApiManager.updateDailyDetails().whenComplete((data, error) -> {
+            if (error != null) {
+                todayDailySeed = -1;
+                return;
+            }
+            todayDailySeed = data.seed();
+        });
+    }
+
     public static void startDaily() {
-        WorldCreationUtil.createAndLoadDaily("_daily", todayDailySeed);
+        WorldCreationUtil.createAndLoadDaily("_daily", ApiManager.TodayDetails);
     }
 
     public static void openLeaderboard() {
         Minecraft.getInstance().setScreen(new LeaderboardScreen());
+        fetchToday();
     }
 
     public static void dailyStarted(long gameTime) {
@@ -138,8 +162,6 @@ public class CraftmineDailies implements ModInitializer {
 
         // Reset
         GAME_TIME_AT_START = -1;
-
-        Minecraft.getInstance().disconnect();
     }
 
     public static boolean shouldRenderInGameTimer() {

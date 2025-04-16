@@ -1,58 +1,76 @@
 package ru.maxthetomas.craftminedailies.mixin.common;
 
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
-import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.inventory.MineCraftingMenu;
-import net.minecraft.world.level.mines.WorldEffect;
-import net.minecraft.world.level.mines.WorldEffectSet;
+import net.minecraft.world.inventory.MineCraftingSlot;
+import net.minecraft.world.level.mines.WorldEffects;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
+import ru.maxthetomas.craftminedailies.auth.ApiManager;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Mixin(MineCraftingMenu.class)
-public class MineCraftingMenuMixin {
+public abstract class MineCraftingMenuMixin {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @Shadow
     @Final
     private Optional<ServerLevel> serverLevel;
 
-    @ModifyVariable(method = "getMustHaveEffects", at = @At("STORE"))
-    private RandomSource mustHaveEffects(RandomSource source) {
-        if (!CraftmineDailies.isDailyWorld(this.serverLevel.get()))
-            return source;
+    @Shadow
+    @Final
+    private List<MineCraftingSlot> craftingSlots;
 
-        return CraftmineDailies.RANDOM_EFFECT_SOURCE;
+
+    @Shadow
+    private int nrOfSlots;
+
+    @Shadow
+    private int nrOfRandomSlots;
+
+    @Inject(method = "populateRandomEffects", at = @At("HEAD"), cancellable = true)
+    private void populate(CallbackInfo ci) {
+        if (!CraftmineDailies.isDailyWorld(Minecraft.getInstance()
+                .getSingleplayerServer().theGame().overworld())) return;
+        ci.cancel();
+
+        boolean addedBase = false;
+        for (MineCraftingSlot slot : this.craftingSlots) {
+            if (!slot.randomSlot || slot.hasItem()) continue;
+
+            if (!addedBase) {
+                addedBase = true;
+                slot.set(WorldEffects.createEffectItem(Component.translatableEscape("craftminedailies.item.base"),
+                        false, List.copyOf(ApiManager.TodayDetails.getEffects())));
+                continue;
+            }
+
+            slot.setActive(true);
+        }
     }
 
-    @Inject(method = "getRandomEffect", at = @At("HEAD"), cancellable = true)
-    private static void randomEffect(ServerLevel serverLevel, List<WorldEffect> list, Set<WorldEffect> set, CallbackInfoReturnable<Optional<WorldEffect>> cir) {
-        if (!CraftmineDailies.isDailyWorld(serverLevel))
-            return;
+    @Inject(at = @At("RETURN"), method = "getLevelName", cancellable = true)
+    public void modifyReturnName(CallbackInfoReturnable<Component> cir) {
+        if (!CraftmineDailies.isDailyWorld(Minecraft.getInstance()
+                .getSingleplayerServer().theGame().overworld())) return;
 
-        WeightedList.Builder<WorldEffect> builder = WeightedList.builder();
+        cir.setReturnValue(Component.translatable("craftminedailies.item.mine"));
+    }
 
-        for (WorldEffect worldEffect : BuiltInRegistries.WORLD_EFFECT) {
-            if (!worldEffect.inSets().stream().anyMatch(WorldEffectSet::exclusive) && worldEffect.randomWeight() > 0 && worldEffect.isValidWith(list) && !set.contains(worldEffect) && worldEffect.canRandomize(serverLevel)) {
-                boolean bl = serverLevel.isEffectUnlocked(worldEffect);
-                if (bl) {
-                    builder.add(worldEffect, worldEffect.randomWeight());
-                } else {
-                    builder.add(worldEffect, (int) ((float) worldEffect.randomWeight() * 0.1F));
-                }
-            }
-        }
+    @Inject(at = @At("RETURN"), method = "setAdditionalData")
+    public void additionalData(List<Integer> list, CallbackInfo ci) {
+        if (!CraftmineDailies.isDailyWorld(Minecraft.getInstance()
+                .getSingleplayerServer().theGame().overworld())) return;
 
-        cir.setReturnValue(builder.build().getRandom(CraftmineDailies.RANDOM_EFFECT_SOURCE));
+        this.nrOfRandomSlots = 1;
     }
 }

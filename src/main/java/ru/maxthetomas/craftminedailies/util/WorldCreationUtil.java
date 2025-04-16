@@ -11,14 +11,11 @@ import net.minecraft.client.gui.screens.worldselection.DataPackReloadCookie;
 import net.minecraft.client.gui.screens.worldselection.WorldCreationContext;
 import net.minecraft.client.gui.screens.worldselection.WorldCreationContextMapper;
 import net.minecraft.core.LayeredRegistryAccess;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.WorldLoader;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.ServerPacksSource;
-import net.minecraft.util.RandomSource;
-import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
@@ -28,12 +25,12 @@ import net.minecraft.world.level.levelgen.WorldDimensions;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
-import net.minecraft.world.level.mines.WorldEffect;
-import net.minecraft.world.level.mines.WorldEffectSet;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.PrimaryLevelData;
 import org.slf4j.Logger;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
+import ru.maxthetomas.craftminedailies.auth.ApiManager;
+import ru.maxthetomas.craftminedailies.mixin.common.PrimaryLevelDataAccessor;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -49,7 +46,7 @@ public class WorldCreationUtil {
     // Add this method to your CreateWorldScreen class or a suitable utility class
     public static boolean createAndLoadDaily(
             String worldName,
-            long seed
+            ApiManager.DailyDetails dailyDetails
     ) {
         Minecraft minecraft = Minecraft.getInstance();
         GameType gameType = GameType.SURVIVAL;
@@ -57,6 +54,7 @@ public class WorldCreationUtil {
         boolean allowCommands = false;
         boolean hardcore = false;
         Path tempDataPackDir = null;
+        long seed = dailyDetails.seed();
         CreateWorldScreen.queueLoadScreen(minecraft, Component.translatable("createWorld.preparing"));
 
         try (var access = Minecraft.getInstance().getLevelSource().createAccess(worldName)) {
@@ -171,34 +169,8 @@ public class WorldCreationUtil {
                 worldDimensions.specialWorldProperty(),
                 finalLifecycle
         );
-        primaryLevelData.setDifficultyLocked(true);
-        primaryLevelData.setModdedInfo(CraftmineDailies.DAILY_SERVER_BRAND, true);
 
-        var random = RandomSource.create((seed << 4) ^ 0x24869 ^ (seed >> 2));
-
-        var builder = new WeightedList.Builder<WorldEffect>();
-        for (WorldEffect worldEffect : BuiltInRegistries.WORLD_EFFECT) {
-            if (worldEffect.inSets().stream().noneMatch(WorldEffectSet::exclusive)
-                    && worldEffect.randomWeight() > 0) {
-                builder.add(worldEffect, worldEffect.randomWeight());
-            }
-        }
-
-        var list = builder.build();
-        var amt = random.nextInt(5, 13);
-        for (int i = 0; i < amt; i++) {
-            var effect = list.getRandom(random).get();
-
-            if (primaryLevelData.isEffectUnlocked(effect)) {
-                // Retry.
-                i--;
-                continue;
-            }
-
-            primaryLevelData.unlockEffect(effect);
-        }
-
-        CraftmineDailies.RANDOM_EFFECT_SOURCE = RandomSource.create(seed << 6 ^ random.nextInt() | ((seed >> 4) & 0xDF));
+        updateLevelData(primaryLevelData, dailyDetails);
 
         // 4. Create World Directory
         String targetFolder = worldName;
@@ -226,6 +198,14 @@ public class WorldCreationUtil {
                 );
 
         return true; // Indicate success
+    }
+
+    private static void updateLevelData(PrimaryLevelData primaryLevelData, ApiManager.DailyDetails dailyDetails) {
+        primaryLevelData.setDifficultyLocked(true);
+        primaryLevelData.setModdedInfo(CraftmineDailies.DAILY_SERVER_BRAND, true);
+        dailyDetails.getUnlockedEffects().forEach(primaryLevelData::unlockEffect);
+        dailyDetails.getEffects().forEach(primaryLevelData::unlockEffect);
+        ((PrimaryLevelDataAccessor) primaryLevelData).setMineCrafterLevel(dailyDetails.mineCrafterLevel());
     }
 
 }
