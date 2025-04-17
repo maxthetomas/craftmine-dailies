@@ -26,6 +26,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/*
+ * Hey there, source code reader!
+ *
+ * I want to politely ask not to use the information from this class,
+ * and other networking classes, to try and "hack" the run submission and leaderboards.
+ *
+ * That would be greatly appreciated!
+ * Thank you for understanding that we're here just to have some fun with this blocky videogame!
+ * */
+
 @SuppressWarnings("resource")
 public class ApiManager {
     private static final Logger LOGGER = LogUtils.getLogger();
