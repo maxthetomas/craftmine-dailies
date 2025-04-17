@@ -8,6 +8,7 @@
     "common.HubLevelSourceMixin",
     "common.LivingEntityInvoker",
     "common.MineCraftingMenuMixin",
+    "common.MobTrophyBlockMixin",
     "common.PlayerListMixin",
     "common.PrimaryLevelDataAccessor",
     "common.ServerLevelAccessor",
