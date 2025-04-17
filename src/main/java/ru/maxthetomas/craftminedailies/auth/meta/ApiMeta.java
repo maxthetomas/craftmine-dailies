@@ -62,6 +62,7 @@ public record ApiMeta(
         obj.addProperty("player_xp", playerExperienceLevel());
         obj.addProperty("game_time", ticks());
         obj.addProperty("player_uuid", playerUUID().toString());
+        obj.addProperty("mod_version", CraftmineDailies.VERSION);
 
         var effects = new JsonArray();
         this.effects().forEach(effects::add);
