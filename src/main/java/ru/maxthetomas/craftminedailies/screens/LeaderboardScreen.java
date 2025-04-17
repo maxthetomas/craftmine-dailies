@@ -1,6 +1,7 @@
 package ru.maxthetomas.craftminedailies.screens;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -196,9 +197,13 @@ public class LeaderboardScreen extends Screen {
     void actualRefresh() {
         futureGetter = ApiManager.fetchLeaderboardPage(currentPageIdx);
         futureGetter.whenComplete((v, er) -> {
+            futureGetter = null;
+            if (er != null) {
+                LogUtils.getLogger().error("Could not fetch leaderboard", er);
+                return;
+            }
             results = v.results();
             pageCount = v.maxPages();
-            futureGetter = null;
         });
     }
 

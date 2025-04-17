@@ -148,7 +148,7 @@ public class ApiManager {
                     String state = obj.get("state").getAsString();
                     int gameTime = obj.get("game_time").getAsInt();
                     String uuid = obj.get("player_uuid").getAsString();
-                    String offlineUsername = obj.get("player_name").getAsString();
+                    String offlineUsername = obj.get("player_username").getAsString();
 
                     var result = new LeaderboardScreen.Result(UndashedUuid.fromStringLenient(uuid), offlineUsername, score,
                             gameTime, LeaderboardScreen.ResultState.valueOf(state));
