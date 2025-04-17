@@ -35,6 +35,7 @@ public class ClientAuth {
             });
 
         if (keyPair == null) return;
+        if (apiAccessToken != null) return;
 
         var payload = createGetTokenPayload();
 

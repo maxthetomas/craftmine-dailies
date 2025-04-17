@@ -68,11 +68,11 @@ public record ApiMeta(
         obj.add("world_effects", effects);
 
         var unlocks = new JsonArray();
-        this.unlocks().forEach(effects::add);
+        this.unlocks().forEach(unlocks::add);
         obj.add("player_unlocks", unlocks);
 
         var mods = new JsonArray();
-        this.mods().forEach(effects::add);
+        this.mods().forEach(mods::add);
         obj.add("client_mods", mods);
 
         return obj;
