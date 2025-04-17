@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+@SuppressWarnings("resource")
 public class ApiManager {
     private static final Logger LOGGER = LogUtils.getLogger();
     public static DailyDetails TodayDetails;
@@ -43,8 +44,8 @@ public class ApiManager {
         DailyFetchError = false;
         TodayDetails = null;
 
-        try (var client = HttpClient.newHttpClient()) {
-            client.sendAsync(ClientAuth.createUnauthorizedRequestBuilder("/today").GET().build(),
+        try {
+            HttpClient.newHttpClient().sendAsync(ClientAuth.createUnauthorizedRequestBuilder("/today").GET().build(),
                     HttpResponse.BodyHandlers.ofString()).whenComplete((data, error) -> {
                 if (error != null) {
                     LOGGER.error("Cannot fetch today daily run details!", error);
@@ -69,8 +70,8 @@ public class ApiManager {
         CachedCurrentLeaderboardPlace = -1;
 
         var request = ClientAuth.createRequestBuilder("/run").POST(HttpRequest.BodyPublishers.ofString(reqJson.toString())).build();
-        try (var client = HttpClient.newHttpClient()) {
-            client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
+        try {
+            HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
                 var json = processResponse(resp, error);
 
                 if (json == null) {
@@ -97,8 +98,8 @@ public class ApiManager {
         reqJson.addProperty("run_id", ongoingRunId);
 
         var request = ClientAuth.createRequestBuilder("/run").PUT(HttpRequest.BodyPublishers.ofString(reqJson.toString())).build();
-        try (var client = HttpClient.newHttpClient()) {
-            client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
+        try {
+            HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
                 var json = processResponse(resp, error);
 
                 if (json == null) {
@@ -124,9 +125,9 @@ public class ApiManager {
 
         var future = new CompletableFuture<LeaderboardFetch>();
 
-        try (var client = HttpClient.newHttpClient()) {
+        try {
             var request = ClientAuth.createUnauthorizedRequestBuilder("/leaderboard?page=" + page).GET().build();
-            client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
+            HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
                 if (error != null) {
                     future.completeExceptionally(error);
                     return;
@@ -171,9 +172,9 @@ public class ApiManager {
     public static CompletableFuture<ServerVersions> fetchServerVersions() {
         var future = new CompletableFuture<ServerVersions>();
 
-        try (var client = HttpClient.newHttpClient()) {
+        try {
             var request = ClientAuth.createUnauthorizedRequestBuilder("/ver").GET().build();
-            client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
+            HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
                 if (error != null) {
                     future.completeExceptionally(error);
                     return;

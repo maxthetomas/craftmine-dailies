@@ -1,6 +1,7 @@
 package ru.maxthetomas.craftminedailies.screens;
 
 import com.mojang.authlib.GameProfile;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -93,17 +94,25 @@ public class LeaderboardScreen extends Screen {
         super.render(guiGraphics, i, j, f);
 
         guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.title"), this.width / 2, 15, 0xFFFFFF);
-        guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.page", currentPageIdx + 1, pageCount), this.width / 2, this.height - 25, 0xFFFFFF);
 
         if (backButton != null)
             backButton.active = canListLeft();
         if (frontButton != null)
             frontButton.active = canListRight();
 
-        if (results == null) {
-            guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.loading"), this.width / 2, 35, 0xFFFFFF);
+        if (results == null || futureGetter != null) {
+            guiGraphics.drawCenteredString(this.font,
+                    Component.translatable("craftminedailies.leaderboards.loading").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC),
+                    this.width / 2, 65, 0xFFFFFF);
             return;
         }
+
+        if (results.isEmpty()) {
+            guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.empty"), this.width / 2, 65, 0xFFFFFF);
+            return;
+        }
+
+        guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.page", currentPageIdx + 1, pageCount), this.width / 2, this.height - 25, 0xFFFFFF);
 
         guiGraphics.pose().pushPose();
         guiGraphics.pose().scale(0.5F, 0.5F, 0.5F);

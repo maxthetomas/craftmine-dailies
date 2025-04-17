@@ -37,6 +37,7 @@
   "craftminedailies.screen.exit.description": "You will not be able to attempt daily run again!",
   "craftminedailies.hud.xp": "XP: %s",
   "craftminedailies.leaderboards.loading": "Loading data...",
+  "craftminedailies.leaderboards.empty": "No data available... :(",
   "craftminedailies.screen.end.title.win": "You won!",
   "craftminedailies.screen.end.title.time_out": "Time out!",
   "craftminedailies.screen.end.score": "Experience (items): %s",
