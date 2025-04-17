@@ -32,8 +32,10 @@ public abstract class TitleScreenMixin {
                     ordinal = 2))
     private GuiEventListener preventThirdWidgetAddition(TitleScreen instance, GuiEventListener guiEventListener) {
         startDailyButton = ((ScreenInvoker) instance).callAddRenderableWidget(createStartDailyButton(instance.width, instance.height));
-        startDailyButton.active = false;
         ((ScreenInvoker) instance).callAddRenderableWidget(createLeaderboardButton(instance.width, instance.height));
+
+        startDailyButton.setMessage(CraftmineDailies.getStartDailyButtonText());
+        startDailyButton.active = CraftmineDailies.shouldAllowDaily();
 
         return guiEventListener;
     }

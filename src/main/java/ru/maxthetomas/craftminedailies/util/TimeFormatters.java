@@ -32,7 +32,7 @@ public class TimeFormatters {
 
     public static String formatTimeWithoutHours(long totalSeconds) {
         // Calculate hours, minutes, and remaining seconds
-        long minutes = (totalSeconds % 3600) / 60;
+        long minutes = totalSeconds / 60;
         long seconds = totalSeconds % 60;
 
         return String.format("%02d:%02d", minutes, seconds);

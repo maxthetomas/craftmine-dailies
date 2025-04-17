@@ -44,10 +44,10 @@ public class WorldCreationUtil {
     public static Logger LOGGER = LogUtils.getLogger();
 
     // Add this method to your CreateWorldScreen class or a suitable utility class
-    public static boolean createAndLoadDaily(
-            String worldName,
+    public static void createAndLoadDaily(
             ApiManager.DailyDetails dailyDetails
     ) {
+        String worldName = CraftmineDailies.WORLD_NAME;
         Minecraft minecraft = Minecraft.getInstance();
         GameType gameType = GameType.SURVIVAL;
         Difficulty difficulty = Difficulty.HARD;
@@ -57,10 +57,7 @@ public class WorldCreationUtil {
         long seed = dailyDetails.seed();
         CreateWorldScreen.queueLoadScreen(minecraft, Component.translatable("createWorld.preparing"));
 
-        try (var access = Minecraft.getInstance().getLevelSource().createAccess(worldName)) {
-            access.deleteLevel();
-        } catch (IOException e) {
-        }
+        tryDeleteWorld();
 
         // 1. Load World Creation Context (similar to openCreateWorldScreen)
         PackRepository packRepository = new PackRepository(
@@ -132,7 +129,7 @@ public class WorldCreationUtil {
                             Component.literal(e.getMessage())
                     )
             ); // Show an error screen
-            return false;
+            return;
         }
 
         // 2. Define LevelSettings & WorldOptions programmatically
@@ -183,7 +180,7 @@ public class WorldCreationUtil {
             SystemToast.onPackCopyFailure(minecraft, targetFolder); // Reuse existing toast
             // Optionally set an error screen:
             // minecraft.setScreen(new ErrorScreen(Component.translatable("selectWorld.unable_to_create"), Component.literal(targetFolder)));
-            return false;
+            return;
         }
 
 
@@ -197,7 +194,6 @@ public class WorldCreationUtil {
                         primaryLevelData
                 );
 
-        return true; // Indicate success
     }
 
     private static void updateLevelData(PrimaryLevelData primaryLevelData, ApiManager.DailyDetails dailyDetails) {
@@ -208,4 +204,10 @@ public class WorldCreationUtil {
         ((PrimaryLevelDataAccessor) primaryLevelData).setMineCrafterLevel(dailyDetails.mineCrafterLevel());
     }
 
+    public static void tryDeleteWorld() {
+        try (var access = Minecraft.getInstance().getLevelSource().createAccess(CraftmineDailies.WORLD_NAME)) {
+            access.deleteLevel();
+        } catch (IOException e) {
+        }
+    }
 }

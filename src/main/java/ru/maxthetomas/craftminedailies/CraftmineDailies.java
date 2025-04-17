@@ -44,6 +44,7 @@ import java.nio.file.Path;
 
 public class CraftmineDailies implements ModInitializer {
     public static final String MOD_ID = "craftminedailies";
+    public static final String WORLD_NAME = "_cmd_daily";
 
     private static Path lastDailySeedPath;
     private static long lastPlayedSeed = -1;
@@ -172,7 +173,7 @@ public class CraftmineDailies implements ModInitializer {
     public static void startDaily() {
         if (!shouldAllowDaily()) return;
         ApiManager.login();
-        WorldCreationUtil.createAndLoadDaily("_daily", ApiManager.TodayDetails);
+        WorldCreationUtil.createAndLoadDaily(ApiManager.TodayDetails);
     }
 
     public static void openLeaderboard(boolean showSelf) {

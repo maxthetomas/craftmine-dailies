@@ -14,5 +14,19 @@
   "craftminedailies.errors.base_with_reset": "There was an error while communicating to the server: %s (You can attempt the daily run again!)",
   "craftminedailies.errors.general_networking": "Network error",
   "craftminedailies.errors.unauthorized": "Could not authorize your player. Try restarting the game if issue persists.",
-  "craftminedailies.errors.already_attempted": "You have already attempted a daily run!"
+  "craftminedailies.errors.already_attempted": "You have already attempted a daily run!",
+  "craftminedailies.screen.won": "Complete Daily Run",
+  "craftminedailies.run.state.win": "Won",
+  "craftminedailies.run.state.death": "Died",
+  "craftminedailies.run.state.time_out": "Time out",
+  "craftminedailies.run.state.dnf": "Left",
+  "craftminedailies.run.time.time_out": "--:--",
+  "craftminedailies.run.time.dnf": "--:--",
+  "craftminedailies.leaderboards.title": "Leaderboard",
+  "craftminedailies.leaderboards.page": "Page %s out of %s",
+  "craftminedailies.leaderboards.player": "Player",
+  "craftminedailies.leaderboards.score": "XP Got",
+  "craftminedailies.leaderboards.time": "End Time",
+  "craftminedailies.leaderboards.state": "State",
+  "craftminedailies.close": "Close"
 }

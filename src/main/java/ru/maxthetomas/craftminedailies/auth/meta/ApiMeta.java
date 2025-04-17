@@ -2,11 +2,11 @@ package ru.maxthetomas.craftminedailies.auth.meta;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.mines.WorldEffect;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.mixin.common.ServerPlayerAccessor;
 
@@ -15,7 +15,7 @@ import java.util.UUID;
 
 // Extra metadata to be stored
 public record ApiMeta(
-        long worldSeed, List<String> effects, UUID playerUUID,
+        long worldSeed, List<String> effects, UUID playerUUID, List<String> mods,
         int playerExperienceLevel, List<String> unlocks, long ticks
 ) {
     public static ApiMeta createMeta() {
@@ -28,11 +28,15 @@ public record ApiMeta(
         List<String> worldEffects = List.of();
         if (level.isPresent()) {
             worldEffects = level.get().getActiveEffects().stream()
-                    .map(WorldEffect::key).toList();
+                    .map(v -> "minecraft:" + v.key()).toList();
         }
 
         UUID playerId = Util.NIL_UUID;
         int xpLevel = -1;
+
+        List<String> mods = FabricLoader.getInstance().getAllMods().stream()
+                .map(v -> v.getMetadata().getId()).toList();
+
         List<String> unlocks = List.of();
 
         var player = server.theGame().playerList().getPlayers().getFirst();
@@ -47,7 +51,7 @@ public record ApiMeta(
 
         return new ApiMeta(
                 server.theGame().overworld().getSeed(),
-                worldEffects, playerId, xpLevel, unlocks, ticks
+                worldEffects, playerId, mods, xpLevel, unlocks, ticks
         );
     }
 
@@ -65,7 +69,11 @@ public record ApiMeta(
 
         var unlocks = new JsonArray();
         this.unlocks().forEach(effects::add);
-        obj.add("player_unlocks", effects);
+        obj.add("player_unlocks", unlocks);
+
+        var mods = new JsonArray();
+        this.mods().forEach(effects::add);
+        obj.add("client_mods", mods);
 
         return obj;
     }
