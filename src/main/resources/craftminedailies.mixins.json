@@ -4,11 +4,11 @@
   "package": "ru.maxthetomas.craftminedailies.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "common.AdvancementMixin",
     "common.HubLevelSourceMixin",
     "common.LivingEntityInvoker",
     "common.MineCraftingMenuMixin",
     "common.MobTrophyBlockMixin",
+    "common.PlayerAdvancementsMixin",
     "common.PlayerListMixin",
     "common.PrimaryLevelDataAccessor",
     "common.ServerLevelAccessor",

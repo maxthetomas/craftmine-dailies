@@ -27,6 +27,8 @@ public abstract class TitleScreenMixin extends Screen {
     @Shadow
     protected abstract void fadeWidgets(float f);
 
+    @Shadow
+    private boolean fading;
     @Unique
     private static Button startDailyButton;
 
@@ -87,6 +89,8 @@ public abstract class TitleScreenMixin extends Screen {
         startDailyButton.setMessage(CraftmineDailies.getStartDailyButtonText());
         startDailyButton.active = CraftmineDailies.shouldAllowDaily();
 
+        if (!this.fading)
+            widgetAlpha = 1f;
         var whiteWithAlpha = 0x00FFFFFF | ((int) (widgetAlpha * 255f) << 8 * 3);
 
         if (widgetAlpha <= 0.01f)
