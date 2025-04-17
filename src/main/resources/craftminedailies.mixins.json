@@ -6,6 +6,7 @@
   "mixins": [
     "common.LivingEntityInvoker",
     "common.MineCraftingMenuMixin",
+    "common.PlayerAdvancementsMixin",
     "common.PlayerListMixin",
     "common.PrimaryLevelDataAccessor",
     "common.ServerLevelAccessor",
