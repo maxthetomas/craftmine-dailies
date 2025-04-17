@@ -69,6 +69,9 @@ public class CraftmineDailies implements ModInitializer {
     protected static boolean ENDED = false;
     protected static boolean WORLD_STARTED = false;
 
+    private static int ticksToExpUpdate = 10;
+    public static int CACHED_CURRENT_INV_EXP = 0;
+
     @Override
     public void onInitialize() {
         lastDailySeedPath = Path.of(FabricLoader.getInstance().getConfigDir().toString() + "/", ".cd_last_played_seed");
@@ -137,6 +140,12 @@ public class CraftmineDailies implements ModInitializer {
             if (GAME_TIME_AT_START == -1) {
                 dailyStarted(s.getGameTime());
                 return;
+            }
+
+            if (--ticksToExpUpdate < 0 && !s.players().isEmpty()) {
+                ticksToExpUpdate = 10;
+                var player = s.players().getFirst();
+                CACHED_CURRENT_INV_EXP = getPlayerInventoryValue(player, false, 1.0);
             }
 
             var remainingTime = MAX_GAME_TIME - s.getGameTime() + GAME_TIME_AT_START;

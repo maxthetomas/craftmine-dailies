@@ -28,5 +28,11 @@
   "craftminedailies.leaderboards.score": "XP Got",
   "craftminedailies.leaderboards.time": "End Time",
   "craftminedailies.leaderboards.state": "State",
-  "craftminedailies.close": "Close"
+  "craftminedailies.close": "Close",
+  "craftminedailies.confrm": "Confirm",
+  "craftminedailies.confirm_exit": "Confirm & Exit",
+  "craftminedailies.back": "Back",
+  "craftminedailies.screen.exit.title": "Are you sure you want to exit?",
+  "craftminedailies.screen.exit.description": "You will not be able to attempt daily run again!",
+  "craftminedailies.hud.xp": "XP: %s"
 }
