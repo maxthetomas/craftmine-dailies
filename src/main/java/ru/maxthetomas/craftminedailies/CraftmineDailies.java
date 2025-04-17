@@ -95,6 +95,7 @@ public class CraftmineDailies implements ModInitializer {
             if (player.getTags().contains(PLAYER_AWARDED_TAG))
                 return;
 
+
             forceUnlocks(serverPlayer.getPlayer());
 
             player.addTag(PLAYER_AWARDED_TAG);
@@ -174,6 +175,10 @@ public class CraftmineDailies implements ModInitializer {
             }
 
             REMAINING_TIME_CACHE = remainingTime;
+        });
+
+        ServerLifecycleEvents.SERVER_STOPPED.register(stopped -> {
+            WorldCreationUtil.tryDeleteWorld();
         });
     }
 
