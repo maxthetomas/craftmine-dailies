@@ -66,6 +66,10 @@ public class CraftmineDailies implements ModInitializer {
     public static final Component BUTTON_TEXT_LOADING = Component.translatable("craftminedailies.button.start.loading");
     public static final Component BUTTON_TEXT_NETWORK_ISSUE = Component.translatable("craftminedailies.button.start.issue");
 
+    public static final Component REMINDER_TIME_10M = Component.translatable("craftminedailies.reminders.10m");
+    public static final Component REMINDER_TIME_5M = Component.translatable("craftminedailies.reminders.5m");
+    public static final Component REMINDER_TIME_1M = Component.translatable("craftminedailies.reminders.1m");
+
     public static long REMAINING_TIME_CACHE = -1;
 
     public static DeathEndContext LAST_DEATH_CONTEXT = null;
@@ -157,6 +161,11 @@ public class CraftmineDailies implements ModInitializer {
             }
 
             var remainingTime = getRemainingTime(s.theGame().server());
+
+            if (remainingTime == 20 * 60 * 10)
+                s.theGame().playerList().broadcastSystemMessage(REMINDER_TIME_10M, false);
+            if (remainingTime == 20 * 60 * 5) s.theGame().playerList().broadcastSystemMessage(REMINDER_TIME_5M, false);
+            if (remainingTime == 20 * 60) s.theGame().playerList().broadcastSystemMessage(REMINDER_TIME_1M, false);
 
             if (remainingTime <= 0) {
                 var player = Minecraft.getInstance().getSingleplayerServer().theGame().playerList().getPlayers().get(0);

@@ -42,5 +42,8 @@
   "craftminedailies.screen.end.title.time_out": "Time out!",
   "craftminedailies.screen.end.score": "Experience (items): %s",
   "craftminedailies.screen.end.time": "Remaining time: %s",
-  "craftminedailies.updateAvailable": "Craftmine Dailies has an update!"
+  "craftminedailies.updateAvailable": "Craftmine Dailies has an update!",
+  "craftminedailies.reminders.10m": "10 minutes remaining!",
+  "craftminedailies.reminders.5m": "5 minutes remaining!",
+  "craftminedailies.reminders.1m": "1 minute remaining!"
 }
