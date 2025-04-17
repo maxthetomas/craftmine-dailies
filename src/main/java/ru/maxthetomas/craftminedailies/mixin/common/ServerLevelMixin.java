@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
-import ru.maxthetomas.craftminedailies.screens.DailyWonScreen;
+import ru.maxthetomas.craftminedailies.screens.NonDeathDailyEndScreen;
 import ru.maxthetomas.craftminedailies.util.ends.WinEndContext;
 
 @Mixin(ServerLevel.class)
@@ -47,7 +47,7 @@ public abstract class ServerLevelMixin {
         ci.cancel();
 
         var ctx = new WinEndContext(
-                CraftmineDailies.getPlayerInventoryValue(serverPlayer, false, 1),
+                CraftmineDailies.getPlayerInventoryValue(serverPlayer, (ServerLevel) (Object) this, false, 1.0),
                 CraftmineDailies.getRemainingTime(this.theGame.server()));
         CraftmineDailies.dailyEnded(ctx);
 
@@ -59,7 +59,7 @@ public abstract class ServerLevelMixin {
             }
 
             minecraft.disconnect(new GenericMessageScreen(Component.translatable("menu.savingLevel")));
-            minecraft.setScreen(new DailyWonScreen(ctx));
+            minecraft.setScreen(new NonDeathDailyEndScreen(ctx));
         });
     }
 }

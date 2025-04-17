@@ -10,6 +10,7 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
+import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.util.TimeFormatters;
 
 import java.util.HashMap;
@@ -18,23 +19,31 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class LeaderboardScreen extends Screen {
-    public LeaderboardScreen(boolean showSelf) {
+    public LeaderboardScreen(int startPage) {
         super(Component.translatable("craftminedailies.screen.leaderboard.title"));
+        actualRefresh();
+    }
+
+    public LeaderboardScreen() {
+        super(Component.translatable("craftminedailies.screen.leaderboard.title"));
+        actualRefresh();
     }
 
     Button backButton;
     Button frontButton;
 
     int currentPageIdx = 0;
-    int maxPageIdx = 4;
+    int pageCount = 1;
 
     @Override
     protected void init() {
         super.init();
 
-        addRenderableWidget(Button.builder(Component.literal("<"), (b) -> {
+        this.backButton = addRenderableWidget(Button.builder(Component.literal("<"), (b) -> {
+            attemptListLeft();
         }).bounds(this.width / 2 - 100, this.height - 30, 20, 20).build());
-        addRenderableWidget(Button.builder(Component.literal(">"), (b) -> {
+        this.frontButton = addRenderableWidget(Button.builder(Component.literal(">"), (b) -> {
+            attemptListRight();
         }).bounds(this.width / 2 + 80, this.height - 30, 20, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("craftminedailies.close"), (b) -> {
             minecraft.setScreen(new TitleScreen());
@@ -64,28 +73,37 @@ public class LeaderboardScreen extends Screen {
         });
 
         // todo: fetch skins when fetching leaderboard data
-        var profile = minecraft.getMinecraftSessionService().fetchProfile(uuid, true);
-        minecraft.getSkinManager().getOrLoad(profile.profile()).whenComplete(((playerSkin, throwable) -> {
-            future.complete(new ProfileData(profile.profile().getName(), playerSkin.orElse(
-                    minecraft.getSkinManager().getInsecureSkin(profile.profile())
-            )));
-        }));
+        Minecraft.getInstance().schedule(() -> {
+            var profile = minecraft.getMinecraftSessionService().fetchProfile(uuid, true);
+            minecraft.getSkinManager().getOrLoad(profile.profile()).whenComplete(((playerSkin, throwable) -> {
+                future.complete(new ProfileData(profile.profile().getName(), playerSkin.orElse(
+                        minecraft.getSkinManager().getInsecureSkin(profile.profile())
+                )));
+            }));
+        });
 
         return minecraft.getSkinManager().getInsecureSkin(new GameProfile(uuid, ""));
     }
 
-    private static List<Result> results = List.of(
-            new Result(UUID.fromString("5eef34b5-cb0c-4956-896b-f9b75ca6ba00"),
-                    "altthetomas", 24865, 20 * 60 * 24869, ResultState.DNF)
-    );
-
+    private static List<Result> results = null;
+    private static CompletableFuture<ApiManager.LeaderboardFetch> futureGetter;
 
     @Override
     public void render(GuiGraphics guiGraphics, int i, int j, float f) {
         super.render(guiGraphics, i, j, f);
 
         guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.title"), this.width / 2, 15, 0xFFFFFF);
-        guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.page", currentPageIdx + 1, maxPageIdx + 1), this.width / 2, this.height - 25, 0xFFFFFF);
+        guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.page", currentPageIdx + 1, pageCount), this.width / 2, this.height - 25, 0xFFFFFF);
+
+        if (backButton != null)
+            backButton.active = canListLeft();
+        if (frontButton != null)
+            frontButton.active = canListRight();
+
+        if (results == null) {
+            guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.loading"), this.width / 2, 35, 0xFFFFFF);
+            return;
+        }
 
         guiGraphics.pose().pushPose();
         guiGraphics.pose().scale(0.5F, 0.5F, 0.5F);
@@ -98,9 +116,9 @@ public class LeaderboardScreen extends Screen {
         guiGraphics.drawString(this.font, Component.translatableWithFallback("craftminedailies.leaderboards.state", "State"), titleX + 210 * 2, titleY, 0xFFFFFF);
         guiGraphics.pose().popPose();
 
-        for (int a = 0; a < 10; a++) {
+        for (int a = 0; a < Math.min(10, results.size()); a++) {
             var y = 38 + a * 17;
-            renderResultAt(guiGraphics, y, a + 1, results.get(a % results.size()));
+            renderResultAt(guiGraphics, y, currentPageIdx * 10 + a + 1, results.get(a));
         }
     }
 
@@ -132,11 +150,52 @@ public class LeaderboardScreen extends Screen {
         graphics.drawString(this.font, result.state.getTranslatable(), x + 210, yText, 0xFFFFFF);
     }
 
+    boolean canListLeft() {
+        return currentPageIdx != 0;
+    }
+
+    boolean canListRight() {
+        return currentPageIdx < pageCount - 1;
+    }
+
+    void attemptListLeft() {
+        if (futureGetter != null) return;
+        if (currentPageIdx == 0) return;
+        currentPageIdx--;
+
+        refreshList();
+    }
+
+    void attemptListRight() {
+        if (futureGetter != null) return;
+        if (currentPageIdx + 1 == pageCount) return;
+        currentPageIdx++;
+
+        refreshList();
+    }
+
+    void refreshList() {
+        if (futureGetter != null) return;
+        results = null;
+        actualRefresh();
+    }
+
+    void actualRefresh() {
+        futureGetter = ApiManager.fetchLeaderboardPage(currentPageIdx);
+        futureGetter.whenComplete((v, er) -> {
+            results = v.results();
+            pageCount = v.maxPages();
+            futureGetter = null;
+        });
+    }
+
     @Override
     public boolean keyPressed(int i, int j, int k) {
         if (i == GLFW.GLFW_KEY_RIGHT) {
+            attemptListRight();
             return true;
         } else if (i == GLFW.GLFW_KEY_LEFT) {
+            attemptListLeft();
             return true;
         }
 

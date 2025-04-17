@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.logging.LogUtils;
+import com.mojang.util.UndashedUuid;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -15,18 +16,24 @@ import net.minecraft.world.level.mines.WorldEffect;
 import org.slf4j.Logger;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.auth.meta.ApiMeta;
+import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
 import ru.maxthetomas.craftminedailies.util.EndContext;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class ApiManager {
     private static final Logger LOGGER = LogUtils.getLogger();
     public static DailyDetails TodayDetails;
     public static boolean DailyFetchError;
     public static int ongoingRunId = -1;
+
+    public static int CachedCurrentLeaderboardPlace = -1;
+    public static int CachedCurrentLeaderboardPage = -1;
 
     public static void login() {
         ClientAuth.tryAuthorizeApi();
@@ -57,6 +64,9 @@ public class ApiManager {
     public static void submitRunStart(ApiMeta meta) {
         var reqJson = new JsonObject();
         reqJson.add("meta", meta.toJson());
+
+        CachedCurrentLeaderboardPage = -1;
+        CachedCurrentLeaderboardPlace = -1;
 
         var request = ClientAuth.createRequestBuilder("/run").POST(HttpRequest.BodyPublishers.ofString(reqJson.toString())).build();
         try (var client = HttpClient.newHttpClient()) {
@@ -94,6 +104,9 @@ public class ApiManager {
                 if (json == null) {
                     return;
                 }
+
+                CachedCurrentLeaderboardPlace = json.get("leaderboard_place").getAsInt();
+                CachedCurrentLeaderboardPage = json.get("leaderboard_page").getAsInt();
             });
         } catch (Exception error) {
             LOGGER.error("Could not submit run end!", error);
@@ -103,6 +116,89 @@ public class ApiManager {
 
         ongoingRunId = -1;
     }
+
+    public record LeaderboardFetch(int maxPages, List<LeaderboardScreen.Result> results) {
+    }
+
+    public static CompletableFuture<LeaderboardFetch> fetchLeaderboardPage(int page) {
+
+        var future = new CompletableFuture<LeaderboardFetch>();
+
+        try (var client = HttpClient.newHttpClient()) {
+            var request = ClientAuth.createUnauthorizedRequestBuilder("/leaderboard?page=" + page).GET().build();
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
+                if (error != null) {
+                    future.completeExceptionally(error);
+                    return;
+                }
+
+                var json = processResponse(resp, error);
+
+                if (json == null) {
+                    future.completeExceptionally(new Exception("Error processing json"));
+                    return;
+                }
+
+                var list = new ArrayList<LeaderboardScreen.Result>();
+                for (JsonElement elem : json.getAsJsonArray("leaderboard")) {
+                    var obj = elem.getAsJsonObject();
+
+                    int score = obj.get("score").getAsInt();
+                    String state = obj.get("state").getAsString();
+                    int gameTime = obj.get("game_time").getAsInt();
+                    String uuid = obj.get("player_uuid").getAsString();
+                    String offlineUsername = obj.get("player_uuid").getAsString();
+
+                    var result = new LeaderboardScreen.Result(UndashedUuid.fromStringLenient(uuid), offlineUsername, score,
+                            gameTime, LeaderboardScreen.ResultState.valueOf(state));
+                    list.add(result);
+                }
+
+                var pageCount = json.get("page_count").getAsInt();
+                future.complete(new LeaderboardFetch(pageCount, list));
+            });
+        } catch (Exception error) {
+            LOGGER.error("Could not get leaderboard data!", error);
+            future.completeExceptionally(error);
+        }
+
+        return future;
+    }
+
+    public record ServerVersions(int serverVersion, int clientVersion) {
+    }
+
+    public static CompletableFuture<ServerVersions> fetchServerVersions() {
+        var future = new CompletableFuture<ServerVersions>();
+
+        try (var client = HttpClient.newHttpClient()) {
+            var request = ClientAuth.createUnauthorizedRequestBuilder("/ver").GET().build();
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
+                if (error != null) {
+                    future.completeExceptionally(error);
+                    return;
+                }
+
+                var json = processResponse(resp, error);
+
+                if (json == null) {
+                    future.completeExceptionally(new Exception("Error processing json"));
+                    return;
+                }
+
+                var srv = json.get("server").getAsInt();
+                var cli = json.get("client").getAsInt();
+
+                future.complete(new ServerVersions(srv, cli));
+            });
+        } catch (Exception error) {
+            LOGGER.error("Could not get leaderboard data!", error);
+            future.completeExceptionally(error);
+        }
+
+        return future;
+    }
+
 
     private static JsonObject processResponse(HttpResponse<String> response, Throwable error) {
         if (error != null) {

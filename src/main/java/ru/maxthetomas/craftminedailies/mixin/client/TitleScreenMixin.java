@@ -22,9 +22,13 @@ import static ru.maxthetomas.craftminedailies.util.TimeFormatters.formatTime;
 import static ru.maxthetomas.craftminedailies.util.TimeFormatters.secondsUntilNextDaily;
 
 @Mixin(TitleScreen.class)
-public abstract class TitleScreenMixin {
+public abstract class TitleScreenMixin extends Screen {
     @Unique
     private static Button startDailyButton;
+
+    protected TitleScreenMixin(Component component) {
+        super(component);
+    }
 
     @Redirect(method = "createNormalMenuOptions",
             at = @At(value = "INVOKE",
@@ -53,7 +57,7 @@ public abstract class TitleScreenMixin {
         var button = SpriteIconButton.builder(
                         Component.translatable("craftminedailies.button.leaderboards"),
                         (but) -> {
-                            CraftmineDailies.openLeaderboard(false);
+                            CraftmineDailies.openLeaderboard();
                         }, true)
                 .sprite(ResourceLocation.fromNamespaceAndPath(CraftmineDailies.MOD_ID, "icon/leaderboards"),
                         15, 15)
@@ -81,6 +85,16 @@ public abstract class TitleScreenMixin {
         // Timer text
         guiGraphics.drawString(minecraft.font, formatTime(secondsUntilNextDaily()),
                 x, y - 1, 0xFFFFFFFF);
+
+        renderUpdate(guiGraphics);
+    }
+
+    @Unique
+    void renderUpdate(GuiGraphics gui) {
+        if (!CraftmineDailies.HAS_UPDATES) return;
+
+        var updateTextHeight = this.height / 4 + 48 + 24 * 3;
+        gui.drawCenteredString(this.font, Component.translatable("craftminedailies.updateAvailable"), this.width / 2, updateTextHeight, 0xFFFFFF);
     }
 
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lcom/mojang/realmsclient/gui/screens/RealmsNotificationsScreen;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V"))

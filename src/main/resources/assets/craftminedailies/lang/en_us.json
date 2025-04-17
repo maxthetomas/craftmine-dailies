@@ -4,6 +4,7 @@
   "craftminedailies.button.start.loading": "Loading...",
   "craftminedailies.button.start.issue": "Could not get info!",
   "craftminedailies.button.leaderboards": "Leaderboard",
+  "craftminedailies.button.returnToMenu": "Back to Title",
   "craftminedailies.publish": "Daily runs cannot be published!",
   "craftminedailies.publish.button": "Not in daily",
   "craftminedailies.item.base": "Daily Mine base",
@@ -15,7 +16,7 @@
   "craftminedailies.errors.general_networking": "Network error",
   "craftminedailies.errors.unauthorized": "Could not authorize your player. Try restarting the game if issue persists.",
   "craftminedailies.errors.already_attempted": "You have already attempted a daily run!",
-  "craftminedailies.screen.won": "Complete Daily Run",
+  "craftminedailies.screen.end": "Completed Daily Run",
   "craftminedailies.run.state.win": "Won",
   "craftminedailies.run.state.death": "Died",
   "craftminedailies.run.state.time_out": "Time out",
@@ -34,5 +35,11 @@
   "craftminedailies.back": "Back",
   "craftminedailies.screen.exit.title": "Are you sure you want to exit?",
   "craftminedailies.screen.exit.description": "You will not be able to attempt daily run again!",
-  "craftminedailies.hud.xp": "XP: %s"
+  "craftminedailies.hud.xp": "XP: %s",
+  "craftminedailies.leaderboards.loading": "Loading data...",
+  "craftminedailies.screen.end.title.win": "You won!",
+  "craftminedailies.screen.end.title.time_out": "Time out!",
+  "craftminedailies.screen.end.score": "Experience (items): %s",
+  "craftminedailies.screen.end.time": "Remaining time: %s",
+  "craftminedailies.updateAvailable": "Craftmine Dailies has an update!"
 }

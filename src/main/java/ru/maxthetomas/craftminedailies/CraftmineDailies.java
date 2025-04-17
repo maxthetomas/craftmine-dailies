@@ -11,6 +11,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.GenericMessageScreen;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -30,6 +31,7 @@ import ru.maxthetomas.craftminedailies.auth.ClientAuth;
 import ru.maxthetomas.craftminedailies.auth.meta.ApiMeta;
 import ru.maxthetomas.craftminedailies.mixin.common.LivingEntityInvoker;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
+import ru.maxthetomas.craftminedailies.screens.NonDeathDailyEndScreen;
 import ru.maxthetomas.craftminedailies.util.EndContext;
 import ru.maxthetomas.craftminedailies.util.WorldCreationUtil;
 import ru.maxthetomas.craftminedailies.util.ends.DeathEndContext;
@@ -45,6 +47,9 @@ import java.nio.file.Path;
 public class CraftmineDailies implements ModInitializer {
     public static final String MOD_ID = "craftminedailies";
     public static final String WORLD_NAME = "_cmd_daily";
+
+    public static final int VERSION = 1;
+    public static boolean HAS_UPDATES = false;
 
     private static Path lastDailySeedPath;
     private static long lastPlayedSeed = -1;
@@ -79,6 +84,8 @@ public class CraftmineDailies implements ModInitializer {
         restoreLastPlayedSeed();
         fetchToday();
 
+        checkForUpdates();
+
         ServerPlayConnectionEvents.JOIN.register((serverPlayer,
                                                   packetListener, server) -> {
             if (!isInDaily()) return;
@@ -112,7 +119,7 @@ public class CraftmineDailies implements ModInitializer {
             if (((LivingEntityInvoker) entity).callCheckTotemDeathProtection(damageSource))
                 return true;
 
-            var experience = getPlayerInventoryValue(player, true, 0.5);
+            var experience = getPlayerInventoryValue(player, player.serverLevel(), true, 0.5);
             var ctx = new DeathEndContext(experience, getRemainingTime(player.serverLevel().theGame().server()),
                     player, damageSource);
             dailyEnded(ctx);
@@ -145,14 +152,25 @@ public class CraftmineDailies implements ModInitializer {
             if (--ticksToExpUpdate < 0 && !s.players().isEmpty()) {
                 ticksToExpUpdate = 10;
                 var player = s.players().getFirst();
-                CACHED_CURRENT_INV_EXP = getPlayerInventoryValue(player, false, 1.0);
+                CACHED_CURRENT_INV_EXP = getPlayerInventoryValue(player, player.serverLevel(), false, 1.0);
             }
 
-            var remainingTime = MAX_GAME_TIME - s.getGameTime() + GAME_TIME_AT_START;
+            var remainingTime = getRemainingTime(s.theGame().server());
 
             if (remainingTime <= 0) {
                 var player = Minecraft.getInstance().getSingleplayerServer().theGame().playerList().getPlayers().get(0);
-                dailyEnded(new TimeOutContext(getPlayerInventoryValue(player, true, 0.5)));
+                var context = new TimeOutContext(getPlayerInventoryValue(player, player.serverLevel(), true, 0.5));
+                dailyEnded(context);
+
+                var minecraft = Minecraft.getInstance();
+                Minecraft.getInstance().schedule(() -> {
+                    if (minecraft.level != null) {
+                        minecraft.level.disconnect();
+                    }
+
+                    minecraft.disconnect(new GenericMessageScreen(Component.translatable("menu.savingLevel")));
+                    minecraft.setScreen(new NonDeathDailyEndScreen(context));
+                });
             }
 
             REMAINING_TIME_CACHE = remainingTime;
@@ -185,9 +203,13 @@ public class CraftmineDailies implements ModInitializer {
         WorldCreationUtil.createAndLoadDaily(ApiManager.TodayDetails);
     }
 
-    public static void openLeaderboard(boolean showSelf) {
-        Minecraft.getInstance().setScreen(new LeaderboardScreen(showSelf));
+    public static void openLeaderboard(int startPage) {
+        Minecraft.getInstance().setScreen(new LeaderboardScreen(startPage));
         fetchToday();
+    }
+
+    public static void openLeaderboard() {
+        openLeaderboard(0);
     }
 
     public static void dailyStarted(long gameTime) {
@@ -271,7 +293,7 @@ public class CraftmineDailies implements ModInitializer {
     }
 
     // Reimplement inventory value calculation for deaths.
-    public static int getPlayerInventoryValue(ServerPlayer player, boolean ignoreSelfPlacedWorldEffects, double extraScale) {
+    public static int getPlayerInventoryValue(ServerPlayer player, ServerLevel level, boolean ignoreSelfPlacedWorldEffects, double extraScale) {
         double totalXp = 0F;
         for (ItemStack stack : player.getInventory()) {
             var worldMods = stack.get(DataComponents.WORLD_MODIFIERS);
@@ -284,7 +306,7 @@ public class CraftmineDailies implements ModInitializer {
 
         double multiplier = 1.0F;
         var todayEffects = ApiManager.TodayDetails.getEffects();
-        for (WorldEffect effect : player.level().getActiveEffects()) {
+        for (WorldEffect effect : level.getActiveEffects()) {
             if (ignoreSelfPlacedWorldEffects) {
                 // Check that the effect is not forced
                 if (!todayEffects.contains(effect))
@@ -321,6 +343,13 @@ public class CraftmineDailies implements ModInitializer {
         } catch (Exception e) {
             lastPlayedSeed = -1;
         }
+    }
+
+    public void checkForUpdates() {
+        ApiManager.fetchServerVersions().whenComplete((ver, thr) -> {
+            if (thr != null) return;
+            HAS_UPDATES = ver.clientVersion() > VERSION;
+        });
     }
 
     private static void dumpData() {
