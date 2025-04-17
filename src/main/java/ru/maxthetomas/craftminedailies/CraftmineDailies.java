@@ -48,7 +48,7 @@ public class CraftmineDailies implements ModInitializer {
     public static final String MOD_ID = "craftminedailies";
     public static final String WORLD_NAME = "_cmd_daily";
 
-    public static final int VERSION = 2;
+    public static final int VERSION = 3;
     public static boolean HAS_UPDATES = false;
 
     private static Path lastDailySeedPath;
