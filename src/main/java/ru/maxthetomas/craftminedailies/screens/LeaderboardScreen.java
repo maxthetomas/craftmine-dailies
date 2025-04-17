@@ -104,6 +104,10 @@ public class LeaderboardScreen extends Screen {
         if (results == null || futureGetter != null) {
             guiGraphics.drawCenteredString(this.font,
                     Component.translatable("craftminedailies.leaderboards.loading").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC),
+                    this.width / 2, this.height - 25, 0xFFFFFF);
+
+            guiGraphics.drawCenteredString(this.font,
+                    Component.translatable("craftminedailies.leaderboards.loading").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC),
                     this.width / 2, 65, 0xFFFFFF);
             return;
         }
