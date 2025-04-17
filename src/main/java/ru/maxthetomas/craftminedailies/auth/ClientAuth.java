@@ -39,7 +39,7 @@ public class ClientAuth {
         var payload = createGetTokenPayload();
 
         try (var client = HttpClient.newHttpClient()) {
-            var request = HttpRequest.newBuilder().POST(HttpRequest.BodyPublishers.ofString(payload.toString())).uri(new URI("https://api.maxthetomas.ru/")).build();
+            var request = createUnauthorizedRequestBuilder("/auth").POST(HttpRequest.BodyPublishers.ofString(payload.toString())).build();
             client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((str, err) -> {
                 if (err != null) return;
                 var data = JsonParser.parseString(str.body());
