@@ -132,8 +132,12 @@ public class LeaderboardScreen extends Screen {
     }
 
     private String getNameFromUUID(UUID uuid, String fallback) {
-        if (profiles.containsKey(uuid) && profiles.getOrDefault(uuid, null) != null)
+        if (profiles.containsKey(uuid) && profiles.getOrDefault(uuid, null) != null) {
+            if (profiles.get(uuid).name == null)
+                return fallback;
+
             return profiles.get(uuid).name;
+        }
 
         return fallback;
     }
