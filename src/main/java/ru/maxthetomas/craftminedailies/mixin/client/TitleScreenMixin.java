@@ -11,6 +11,7 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -23,6 +24,9 @@ import static ru.maxthetomas.craftminedailies.util.TimeFormatters.secondsUntilNe
 
 @Mixin(TitleScreen.class)
 public abstract class TitleScreenMixin extends Screen {
+    @Shadow
+    protected abstract void fadeWidgets(float f);
+
     @Unique
     private static Button startDailyButton;
 
@@ -43,6 +47,9 @@ public abstract class TitleScreenMixin extends Screen {
 
         return guiEventListener;
     }
+
+    @Unique
+    private float widgetAlpha = 0F;
 
     @Unique
     private static Button createStartDailyButton(int screenWidth, int screenHeight) {
@@ -80,25 +87,38 @@ public abstract class TitleScreenMixin extends Screen {
         startDailyButton.setMessage(CraftmineDailies.getStartDailyButtonText());
         startDailyButton.active = CraftmineDailies.shouldAllowDaily();
 
+        var whiteWithAlpha = 0x00FFFFFF | ((int) (widgetAlpha * 255f) << 8 * 3);
+
+        if (widgetAlpha <= 0.01f)
+            return;
+
         // Background
         guiGraphics.fill(x - 3, y - 5, x + 44, y + 9, 0xAA000000);
         // Timer text
         guiGraphics.drawString(minecraft.font, formatTime(secondsUntilNextDaily()),
-                x, y - 1, 0xFFFFFFFF);
+                x, y - 1, whiteWithAlpha);
 
-        renderUpdate(guiGraphics);
+        renderUpdate(guiGraphics, whiteWithAlpha);
     }
 
     @Unique
-    void renderUpdate(GuiGraphics gui) {
+    void renderUpdate(GuiGraphics gui, int color) {
         if (!CraftmineDailies.HAS_UPDATES) return;
 
         var updateTextHeight = this.height / 4 + 48 + 24 * 3;
-        gui.drawCenteredString(this.font, Component.translatable("craftminedailies.updateAvailable"), this.width / 2, updateTextHeight, 0xFFFFFF);
+        gui.drawCenteredString(this.font, Component.translatable("craftminedailies.updateAvailable"), this.width / 2, updateTextHeight, color);
     }
 
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lcom/mojang/realmsclient/gui/screens/RealmsNotificationsScreen;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V"))
     public void realmsRedirect(RealmsNotificationsScreen instance, GuiGraphics guiGraphics, int i, int j, float f) {
         // Ignores realms
     }
+
+    @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/TitleScreen;fadeWidgets(F)V"))
+    public void redirect(TitleScreen instance, float f) {
+        this.fadeWidgets(f);
+        widgetAlpha = f;
+    }
+
+
 }
