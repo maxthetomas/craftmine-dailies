@@ -5,7 +5,7 @@
   "craftminedailies.button.start.issue": "Не удалось получить информацию!",
   "craftminedailies.button.leaderboards": "Таблица лидеров",
   "craftminedailies.button.returnToMenu": "На главный экран",
-  "craftminedailies.publish": "Ежедневные забеги не могут быть опубликованы!",
+  "craftminedailies.publish": "Нельзя запустить локальную игру в ежедневном забеге!",
   "craftminedailies.publish.button": "Не здесь",
   "craftminedailies.item.base": "Основа ежедневной шахты",
   "craftminedailies.item.mine": "Ежедневная шахта",
