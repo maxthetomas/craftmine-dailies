@@ -16,9 +16,9 @@ import java.util.UUID;
 // Extra metadata to be stored
 public record ApiMeta(
         long worldSeed, List<String> effects, UUID playerUUID, List<String> mods,
-        int playerExperienceLevel, List<String> unlocks, long ticks
+        int playerExperienceLevel, List<String> unlocks, long ticks, InventoryMeta inventoryMeta
 ) {
-    public static ApiMeta createMeta() {
+    public static ApiMeta createMeta(InventoryMeta inventoryMeta) {
         if (!CraftmineDailies.isInDaily()) return null;
 
         var server = Minecraft.getInstance().getSingleplayerServer();
@@ -51,7 +51,8 @@ public record ApiMeta(
 
         return new ApiMeta(
                 server.theGame().overworld().getSeed(),
-                worldEffects, playerId, mods, xpLevel, unlocks, ticks
+                worldEffects, playerId, mods, xpLevel, unlocks, ticks,
+                inventoryMeta
         );
     }
 
@@ -63,6 +64,7 @@ public record ApiMeta(
         obj.addProperty("game_time", ticks());
         obj.addProperty("player_uuid", playerUUID().toString());
         obj.addProperty("mod_version", CraftmineDailies.VERSION);
+        obj.add("inventory", inventoryMeta.toJson());
 
         var effects = new JsonArray();
         this.effects().forEach(effects::add);

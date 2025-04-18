@@ -1,0 +1,49 @@
+package ru.maxthetomas.craftminedailies.auth.meta;
+
+import com.google.gson.JsonElement;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public record InventoryMeta(List<SlotItem> itemSlots) {
+    public static MapCodec<InventoryMeta> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            SlotItem.CODEC.codec().listOf().fieldOf("inventory").forGetter(InventoryMeta::itemSlots)
+    ).apply(instance, InventoryMeta::new));
+
+    public record SlotItem(ItemStack stack, int slot) {
+        public static MapCodec<SlotItem> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                ItemStack.CODEC.fieldOf("item").forGetter(SlotItem::stack),
+                Codec.INT.fieldOf("slot").forGetter(SlotItem::slot)
+        ).apply(instance, SlotItem::new));
+    }
+
+    public static InventoryMeta createForPlayer(ServerPlayer player) {
+        var inventoryList = player.getInventory().save(new ListTag());
+
+        var slotItems = new ArrayList<SlotItem>();
+        for (int i = 0; i < inventoryList.size(); ++i) {
+            CompoundTag compoundTag = inventoryList.getCompoundOrEmpty(i);
+            int slot = compoundTag.getByteOr("Slot", (byte) 0) & 255;
+            ItemStack itemStack = ItemStack.parse(player.registryAccess(),
+                    compoundTag).orElse(ItemStack.EMPTY);
+
+            slotItems.add(new SlotItem(itemStack, slot));
+        }
+
+        return new InventoryMeta(slotItems);
+    }
+
+    public JsonElement toJson() {
+        var json = CODEC.encoder().encode(this, JsonOps.INSTANCE,
+                JsonOps.INSTANCE.emptyMap()).getOrThrow();
+        return json.getAsJsonObject().get("inventory");
+    }
+}

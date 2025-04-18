@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
+import ru.maxthetomas.craftminedailies.auth.meta.InventoryMeta;
 import ru.maxthetomas.craftminedailies.screens.NonDeathDailyEndScreen;
 import ru.maxthetomas.craftminedailies.util.ends.WinEndContext;
 
@@ -46,10 +47,11 @@ public abstract class ServerLevelMixin {
 
         ci.cancel();
 
+        var inventoryMeta = InventoryMeta.createForPlayer(serverPlayer);
         var ctx = new WinEndContext(
                 CraftmineDailies.getPlayerInventoryValue(serverPlayer, (ServerLevel) (Object) this, false, 1.0),
                 CraftmineDailies.getRemainingTime(this.theGame.server()));
-        CraftmineDailies.dailyEnded(ctx);
+        CraftmineDailies.dailyEnded(ctx, inventoryMeta);
 
         var minecraft = Minecraft.getInstance();
 
