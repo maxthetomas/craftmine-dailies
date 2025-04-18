@@ -136,7 +136,7 @@ public class LeaderboardScreen extends Screen {
         }
     }
 
-    private String getNameFromUUID(UUID uuid, String fallback) {
+    public static String getNameFromUUID(UUID uuid, String fallback) {
         if (profiles.containsKey(uuid) && profiles.getOrDefault(uuid, null) != null) {
             if (profiles.get(uuid).name == null)
                 return fallback;
@@ -166,6 +166,31 @@ public class LeaderboardScreen extends Screen {
         graphics.drawString(this.font, Component.literal(String.valueOf(result.xp)), x + 130, yText, 0xFFFFFF);
         graphics.drawString(this.font, getTime(result), x + 172, yText, 0xFFFFFF);
         graphics.drawString(this.font, result.state.getTranslatable(), x + 210, yText, 0xFFFFFF);
+    }
+
+    public int getCurrentlySelectedRun(int mouseX, int mouseY) {
+        int x = this.width / 2 - 110;
+        if (mouseX < x || mouseX > x + 220) return -1;
+        if (mouseY < 38 || mouseY > 38 + 17 * 10) return -1;
+
+        var y = mouseY - 38;
+        y /= 17;
+
+        return y;
+    }
+
+    @Override
+    public boolean mouseClicked(double d, double e, int i) {
+        if (i == 0) {
+            var currentRun = getCurrentlySelectedRun((int) d, (int) e);
+            if (currentRun != -1 && currentRun < results.size()) {
+                var runId = results.get(currentRun).runId;
+                this.minecraft.setScreen(new RunDetailsScreen(this, runId));
+                return true;
+            }
+        }
+
+        return super.mouseClicked(d, e, i);
     }
 
     boolean canListLeft() {
@@ -225,7 +250,7 @@ public class LeaderboardScreen extends Screen {
         return super.keyPressed(i, j, k);
     }
 
-    public record Result(UUID playerId, String offlineName, int xp, int gameTime, ResultState state) {
+    public record Result(UUID playerId, String offlineName, int xp, int gameTime, ResultState state, int runId) {
     }
 
     public enum ResultState {

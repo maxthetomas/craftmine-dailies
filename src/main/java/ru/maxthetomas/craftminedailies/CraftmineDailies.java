@@ -270,10 +270,6 @@ public class CraftmineDailies implements ModInitializer {
         return true;
     }
 
-    private static void refreshAllDailies() {
-
-    }
-
     public static void showErrorMessage(Component component, boolean resetDaily) {
         Minecraft.getInstance().getChatListener().handleSystemMessage(Component.translatable("craftminedailies.errors.base" + (resetDaily ? "_with_reset" : ""), component)
                 .withStyle(ChatFormatting.RED), false);

@@ -159,14 +159,44 @@ public class ApiManager {
                     int gameTime = obj.get("game_time").getAsInt();
                     String uuid = obj.get("player_uuid").getAsString();
                     String offlineUsername = obj.get("player_username").getAsString();
+                    int runId = obj.get("run_id").getAsInt();
 
                     var result = new LeaderboardScreen.Result(UndashedUuid.fromStringLenient(uuid), offlineUsername, score,
-                            gameTime, LeaderboardScreen.ResultState.valueOf(state));
+                            gameTime, LeaderboardScreen.ResultState.valueOf(state), runId);
                     list.add(result);
                 }
 
                 var pageCount = json.get("page_count").getAsInt();
                 future.complete(new LeaderboardFetch(pageCount, list));
+            });
+        } catch (Exception error) {
+            LOGGER.error("Could not get leaderboard data!", error);
+            future.completeExceptionally(error);
+        }
+
+        return future;
+    }
+
+
+    public static CompletableFuture<RunDetails> fetchRunDetails(int runId) {
+        var future = new CompletableFuture<RunDetails>();
+
+        try {
+            var request = ClientAuth.createUnauthorizedRequestBuilder("/run/" + runId).GET().build();
+            HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
+                if (error != null) {
+                    future.completeExceptionally(error);
+                    return;
+                }
+
+                var json = processResponse(resp, error);
+
+                if (json == null) {
+                    future.completeExceptionally(new Exception("Error processing json"));
+                    return;
+                }
+
+                future.complete(RunDetails.fromJson(json));
             });
         } catch (Exception error) {
             LOGGER.error("Could not get leaderboard data!", error);
