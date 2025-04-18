@@ -1,6 +1,8 @@
 package ru.maxthetomas.craftminedailies.util.ends;
 
 import com.google.gson.JsonObject;
+import com.mojang.serialization.JsonOps;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import ru.maxthetomas.craftminedailies.util.EndContext;
@@ -31,7 +33,8 @@ public class DeathEndContext extends EndContext {
     public JsonObject getAsJson() {
         var json = super.getAsJson();
 
-        json.addProperty("death_message", source.getLocalizedDeathMessage(player).getString());
+        json.add("death_message", ComponentSerialization.CODEC.encode(source.getLocalizedDeathMessage(player),
+                JsonOps.INSTANCE, JsonOps.INSTANCE.emptyMap()).getOrThrow());
         json.addProperty("damage_type", source.type().msgId());
         Optional.ofNullable(source.getEntity()).ifPresent((e) -> json.addProperty("damager_entity", e.getType().getDescriptionId()));
 
