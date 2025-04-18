@@ -38,12 +38,12 @@
   "craftminedailies.hud.xp": "XP: %s",
   "craftminedailies.leaderboards.loading": "Загрузка информации...",
   "craftminedailies.leaderboards.empty": "Информация отсутствует... :(",
-  "craftminedailies.screen.end.title.win": "Ты победил!",
+  "craftminedailies.screen.end.title.win": "Победа!",
   "craftminedailies.screen.end.title.time_out": "Время вышло!",
   "craftminedailies.screen.end.score": "Опыт (предметы): %s",
   "craftminedailies.screen.end.time": "Оставшееся время: %s",
   "craftminedailies.updateAvailable": "Craftmine Dailies имеет обновление!",
-  "craftminedailies.reminders.10m": "10 минут осталось!",
-  "craftminedailies.reminders.5m": "5 минут осталось!",
-  "craftminedailies.reminders.1m": "1 минут осталось!"
+  "craftminedailies.reminders.10m": "Осталось 10 минут!",
+  "craftminedailies.reminders.5m": "Осталось 5 минут!",
+  "craftminedailies.reminders.1m": "Осталось 1 минут!"
 }
