@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.players.PlayerUnlock;
 import net.minecraft.server.players.PlayerUnlocks;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.mines.WorldEffect;
 import net.minecraft.world.level.mines.WorldEffects;
@@ -273,7 +274,7 @@ public class RunDetailsScreen extends Screen {
         }
 
         // Offhand
-        renderItem(guiGraphics, xBase + 18 * 10 + 3 * 2 + 1, yBase + 1, EquipmentSlot.OFFHAND.getIndex(36));
+        renderItem(guiGraphics, xBase + 18 * 10 + 3 * 2 + 1, yBase + 1, Inventory.SLOT_OFFHAND);
     }
 
     private void renderSlotSprite(GuiGraphics guiGraphics, int x, int y, int guiWidth, int guiHeight) {
