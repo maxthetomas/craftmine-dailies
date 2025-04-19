@@ -11,6 +11,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import org.lwjgl.glfw.GLFW;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.util.TimeFormatters;
@@ -130,9 +131,10 @@ public class LeaderboardScreen extends Screen {
         guiGraphics.drawString(this.font, Component.translatableWithFallback("craftminedailies.leaderboards.state", "State"), titleX + 210 * 2, titleY, 0xFFFFFF);
         guiGraphics.pose().popPose();
 
+        var selectedRun = getCurrentlySelectedRun(i, j);
         for (int a = 0; a < Math.min(10, results.size()); a++) {
             var y = 38 + a * 17;
-            renderResultAt(guiGraphics, y, currentPageIdx * 10 + a + 1, results.get(a));
+            renderResultAt(guiGraphics, y, currentPageIdx * 10 + a + 1, results.get(a), selectedRun == a);
         }
     }
 
@@ -157,12 +159,14 @@ public class LeaderboardScreen extends Screen {
         return Component.literal(TimeFormatters.formatTimeWithoutHours(ticks / 20));
     }
 
-    private void renderResultAt(GuiGraphics graphics, int y, int order, Result result) {
+    private void renderResultAt(GuiGraphics graphics, int y, int order, Result result, boolean selected) {
         int x = this.width / 2 - 110;
         int yText = y + 3 + 4;
-        graphics.drawString(this.font, Component.literal(String.format("%s.", order)), x - 4 - 20, yText, 0xFFFFFF);
+        var style = Style.EMPTY.withUnderlined(selected);
+        graphics.drawString(this.font,
+                Component.literal(String.format("%s.", order)), x - 4 - 20, yText, 0xFFFFFF);
         PlayerFaceRenderer.draw(graphics, getOrAddCache(minecraft, result.playerId), x + 4, y + 4, 12);
-        graphics.drawString(this.font, Component.literal(getNameFromUUID(result.playerId, result.offlineName)), x + 7 + 16, yText, 0xFFFFFF);
+        graphics.drawString(this.font, Component.literal(getNameFromUUID(result.playerId, result.offlineName)).withStyle(style), x + 7 + 16, yText, 0xFFFFFF);
         graphics.drawString(this.font, Component.literal(String.valueOf(result.xp)), x + 130, yText, 0xFFFFFF);
         graphics.drawString(this.font, getTime(result), x + 172, yText, 0xFFFFFF);
         graphics.drawString(this.font, result.state.getTranslatable(), x + 210, yText, 0xFFFFFF);

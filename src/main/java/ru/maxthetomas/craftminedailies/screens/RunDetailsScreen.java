@@ -9,7 +9,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.players.PlayerUnlock;
 import net.minecraft.server.players.PlayerUnlocks;
@@ -88,8 +90,8 @@ public class RunDetailsScreen extends Screen {
         renderPlayerInfo(guiGraphics);
         renderRunStats(guiGraphics);
         int y = renderUnlocks(guiGraphics);
-        renderWorldEffects(guiGraphics, y);
-        renderInventory(guiGraphics);
+        y = renderWorldEffects(guiGraphics, y);
+        renderInventory(guiGraphics, y);
     }
 
     private void renderPlayerInfo(GuiGraphics guiGraphics) {
@@ -123,7 +125,7 @@ public class RunDetailsScreen extends Screen {
         guiGraphics.drawString(this.font, cmp, x, y, 0xFFFFFF);
     }
 
-    private void renderWorldEffects(GuiGraphics guiGraphics, int baseY) {
+    private int renderWorldEffects(GuiGraphics guiGraphics, int baseY) {
         baseY += 12;
 
         guiGraphics.drawString(this.font, Component.translatableWithFallback("craftminedailies.run.effects", "World ingredients"), xBase, baseY, 0xFFFFFF);
@@ -141,7 +143,7 @@ public class RunDetailsScreen extends Screen {
         }
 
         if (details.forcedWorldEffects().isEmpty())
-            return;
+            return baseY + 40;
 
         guiGraphics.vLine(accumulatedX + 1, baseY + 14, baseY + 14 + 10, 0xFFFFFFFF);
 
@@ -157,6 +159,8 @@ public class RunDetailsScreen extends Screen {
                 baseY += 18;
             }
         }
+
+        return baseY + 40;
     }
 
     private int renderUnlocks(GuiGraphics guiGraphics) {
@@ -221,8 +225,8 @@ public class RunDetailsScreen extends Screen {
         }
     }
 
-    private void renderInventory(GuiGraphics guiGraphics) {
-        int yBase = this.height / 2 + 28;
+    private void renderInventory(GuiGraphics guiGraphics, int baseY) {
+        int yBase = baseY + 10;
 
         if (details.inventory().isEmpty()) {
             guiGraphics.drawString(this.font, Component.translatable("craftminedailies.run.inventoryEmpty").withStyle(ChatFormatting.ITALIC, ChatFormatting.GRAY),
@@ -297,7 +301,10 @@ public class RunDetailsScreen extends Screen {
         guiGraphics.renderItem(slot, x, y);
         guiGraphics.renderItemDecorations(this.font, slot, x, y);
         if (!slot.isEmpty() && isSlotSelected(x, y)) {
-            guiGraphics.renderTooltip(this.font, slot, xMouse, yMouse);
+            var tt = Screen.getTooltipFromItem(minecraft, slot).stream().filter(v -> !(v.getContents() instanceof TranslatableContents tc) ||
+                    !tc.getKey().equals("world.effect.convert")).toList();
+            guiGraphics.renderTooltip(font, tt, slot.getTooltipImage(), xMouse, yMouse,
+                    slot.get(DataComponents.TOOLTIP_STYLE));
         }
     }
 
