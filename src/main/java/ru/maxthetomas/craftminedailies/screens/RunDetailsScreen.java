@@ -103,7 +103,7 @@ public class RunDetailsScreen extends Screen {
     }
 
     private void renderRunStats(GuiGraphics guiGraphics) {
-        int baseHeight = 28;
+        int baseHeight = 24;
         var runState = details.state().getTranslatable().copy();
 
         if (details.deathMessage().isPresent())
