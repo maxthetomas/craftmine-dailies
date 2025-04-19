@@ -104,15 +104,20 @@ public class RunDetailsScreen extends Screen {
 
     private void renderRunStats(GuiGraphics guiGraphics) {
         int baseHeight = 28;
-        var runState = Component.translatableWithFallback("craftminedailies.run.time", "%s at %s",
-                details.state().getTranslatable(), TimeFormatters.formatTimeWithoutHours(details.time() / 20));
+        var runState = details.state().getTranslatable().copy();
 
         if (details.deathMessage().isPresent())
             runState = runState.withStyle(ChatFormatting.UNDERLINE);
 
+
         renderRightAligned(guiGraphics, runState, baseHeight);
+
+        if (details.deathMessage().isPresent()) baseHeight++;
+
+        renderRightAligned(guiGraphics, Component.translatableWithFallback("craftminedailies.run.time", "%s",
+                TimeFormatters.formatTimeWithoutHours(details.time() / 20)), baseHeight + 10);
         renderRightAligned(guiGraphics, Component.translatableWithFallback("craftminedailies.run.score", "XP: %s",
-                details.score()), baseHeight + 11);
+                details.score()), baseHeight + 20);
 
         var rightAlign = xBase + 18 * 10 + 3;
         var x = rightAlign - this.font.width(runState);

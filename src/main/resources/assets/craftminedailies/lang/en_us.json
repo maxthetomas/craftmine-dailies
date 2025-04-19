@@ -50,6 +50,6 @@
   "craftminedailies.run.inventoryEmpty": "No data or empty inventory!",
   "craftminedailies.run.unlocks": "Player unlocks",
   "craftminedailies.run.effects": "World ingredients",
-  "craftminedailies.run.time": "%s at %s",
+  "craftminedailies.run.time": "%s",
   "craftminedailies.run.score": "XP: %s"
 }
