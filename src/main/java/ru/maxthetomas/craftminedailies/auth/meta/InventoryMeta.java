@@ -30,7 +30,7 @@ public record InventoryMeta(List<SlotItem> itemSlots) {
     public static InventoryMeta createForPlayer(ServerPlayer player) {
         var inventoryList = player.getInventory().save(new ListTag());
 
-        var slotItems = new ArrayList<SlotItem>();
+        List<SlotItem> slotItems = new ArrayList<SlotItem>();
         for (int i = 0; i < inventoryList.size(); ++i) {
             CompoundTag compoundTag = inventoryList.getCompoundOrEmpty(i);
             int slot = compoundTag.getByteOr("Slot", (byte) 0) & 255;
@@ -53,6 +53,7 @@ public record InventoryMeta(List<SlotItem> itemSlots) {
         }
 
         slotItems.add(new SlotItem(player.getOffhandItem(), Inventory.SLOT_OFFHAND));
+        slotItems = slotItems.stream().filter(v -> !v.stack.isEmpty()).toList();
 
         return new InventoryMeta(slotItems);
     }
