@@ -8,6 +8,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
@@ -37,6 +38,18 @@ public record InventoryMeta(List<SlotItem> itemSlots) {
                     compoundTag).orElse(ItemStack.EMPTY);
 
             slotItems.add(new SlotItem(itemStack, slot));
+        }
+
+
+        for (EquipmentSlot equipmentSlot : EquipmentSlot.VALUES) {
+            ItemStack itemStack = player.getItemBySlot(equipmentSlot);
+            if (itemStack.isEmpty()) {
+                continue;
+            }
+            if (equipmentSlot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+                var slotId = equipmentSlot.getIndex(36);
+                slotItems.add(new SlotItem(itemStack, slotId));
+            }
         }
 
         slotItems.add(new SlotItem(player.getOffhandItem(), Inventory.SLOT_OFFHAND));

@@ -275,11 +275,11 @@ public class RunDetailsScreen extends Screen {
             int finalX = xBase + 18 * 9 + 3;
             int finalY = yBase + row * 18 + 1;
 //            int effectiveSlotId = 103 - row;
-            renderItem(guiGraphics, finalX, finalY, eqSlots.get(row).getIndex(36));
+            renderItem(guiGraphics, finalX + 1, finalY, eqSlots.get(row).getIndex(36));
         }
 
         // Offhand
-        renderItem(guiGraphics, xBase + 18 * 10 + 3 * 2 + 1, yBase + 1, Inventory.SLOT_OFFHAND);
+        renderItem(guiGraphics, xBase + 18 * 10 + 3 * 2 + 2, yBase + 1, Inventory.SLOT_OFFHAND);
     }
 
     private void renderSlotSprite(GuiGraphics guiGraphics, int x, int y, int guiWidth, int guiHeight) {
