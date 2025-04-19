@@ -58,7 +58,7 @@ public class RunDetailsScreen extends Screen {
     protected void init() {
         super.init();
 
-        addRenderableWidget(Button.builder(Component.translatable("craftminedailies.close"), (b) -> {
+        addRenderableWidget(Button.builder(Component.translatable("craftminedailies.back"), (b) -> {
             onClose();
         }).bounds(10, this.height - 30, 50, 20).build());
 
