@@ -8,6 +8,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -37,6 +38,8 @@ public record InventoryMeta(List<SlotItem> itemSlots) {
 
             slotItems.add(new SlotItem(itemStack, slot));
         }
+
+        slotItems.add(new SlotItem(player.getOffhandItem(), EquipmentSlot.OFFHAND.getIndex(36)));
 
         return new InventoryMeta(slotItems);
     }

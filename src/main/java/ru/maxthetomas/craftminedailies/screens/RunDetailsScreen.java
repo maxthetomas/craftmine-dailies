@@ -15,6 +15,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.players.PlayerUnlock;
 import net.minecraft.server.players.PlayerUnlocks;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.mines.WorldEffect;
 import net.minecraft.world.level.mines.WorldEffects;
@@ -149,16 +150,10 @@ public class RunDetailsScreen extends Screen {
 
         accumulatedX += 4;
 
-        for (WorldEffect effect : details.forcedWorldEffects()) {
-            renderAdvancementLike(guiGraphics, accumulatedX, baseY + 12, WorldEffects.createEffectItem(effect, true),
-                    effect.name(), effect.description());
-            accumulatedX += 16;
-
-            if (accumulatedX > xBase + 18 * 9) {
-                accumulatedX = xBase;
-                baseY += 18;
-            }
-        }
+        var effectItem = WorldEffects.createEffectItem(Component.translatableEscape("craftminedailies.item.base"),
+                false, List.copyOf(details.forcedWorldEffects()));
+        renderAdvancementLike(guiGraphics, accumulatedX, baseY + 12, effectItem,
+                getTooltipFromItem(minecraft, effectItem));
 
         return baseY + 40;
     }
@@ -211,6 +206,10 @@ public class RunDetailsScreen extends Screen {
                 description
         );
 
+        renderAdvancementLike(guiGraphics, x, y, stack, tooltip);
+    }
+
+    private void renderAdvancementLike(GuiGraphics guiGraphics, int x, int y, ItemStack stack, List<Component> tooltip) {
         guiGraphics.blit(RenderType::guiTextured, ADVANCEMENT_BACKGROUND,
                 x, y, 0, 0, 16, 16, 16, 16);
 
@@ -242,7 +241,7 @@ public class RunDetailsScreen extends Screen {
 
         // Main inventory
         for (int row = 0; row < 3; row++) {
-            if (row > details.getNumInventoryRows())
+            if (row >= details.getNumInventoryRows())
                 renderLockedSpriteRow(guiGraphics, xBase, yBase + 18 * row);
 
             for (int column = 0; column < 9; column++) {
@@ -264,16 +263,17 @@ public class RunDetailsScreen extends Screen {
         if (!details.hasUnlock(PlayerUnlocks.ARMAMENTS))
             renderLockedArmor(guiGraphics, xBase, yBase);
 
+        var eqSlots = List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET);
         // Armor
         for (int row = 0; row < 4; row++) {
             int finalX = xBase + 18 * 9 + 3;
             int finalY = yBase + row * 18 + 1;
-            int effectiveSlotId = 103 - row;
-            renderItem(guiGraphics, finalX, finalY, effectiveSlotId);
+//            int effectiveSlotId = 103 - row;
+            renderItem(guiGraphics, finalX, finalY, eqSlots.get(row).getIndex(36));
         }
 
         // Offhand
-        renderItem(guiGraphics, xBase + 18 * 10 + 3 * 2 + 1, yBase + 1, 99);
+        renderItem(guiGraphics, xBase + 18 * 10 + 3 * 2 + 1, yBase + 1, EquipmentSlot.OFFHAND.getIndex(36));
     }
 
     private void renderSlotSprite(GuiGraphics guiGraphics, int x, int y, int guiWidth, int guiHeight) {
