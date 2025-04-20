@@ -27,11 +27,6 @@ public class LeaderboardScreen extends Screen {
         actualRefresh();
     }
 
-    public LeaderboardScreen() {
-        super(Component.translatable("craftminedailies.screen.leaderboard.title"));
-        actualRefresh();
-    }
-
     Button backButton;
     Button frontButton;
 
@@ -75,15 +70,14 @@ public class LeaderboardScreen extends Screen {
             profiles.compute(uuid, (u, pd) -> d);
         });
 
-        // todo: fetch skins when fetching leaderboard data
-        Minecraft.getInstance().schedule(() -> {
+        new Thread(() -> {
             var profile = minecraft.getMinecraftSessionService().fetchProfile(uuid, true);
             minecraft.getSkinManager().getOrLoad(profile.profile()).whenComplete(((playerSkin, throwable) -> {
                 future.complete(new ProfileData(profile.profile().getName(), playerSkin.orElse(
                         minecraft.getSkinManager().getInsecureSkin(profile.profile())
                 )));
             }));
-        });
+        }).start();
 
         return minecraft.getSkinManager().getInsecureSkin(new GameProfile(uuid, ""));
     }
