@@ -15,6 +15,7 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.players.PlayerUnlock;
 import net.minecraft.world.level.mines.WorldEffect;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.auth.meta.ApiMeta;
@@ -137,12 +138,15 @@ public class ApiManager {
     public record LeaderboardFetch(int maxPages, List<LeaderboardScreen.Result> results) {
     }
 
-    public static CompletableFuture<LeaderboardFetch> fetchLeaderboardPage(int page) {
+    public static CompletableFuture<LeaderboardFetch> fetchLeaderboardPage(int page, @Nullable String apiDay) {
 
         var future = new CompletableFuture<LeaderboardFetch>();
 
         try {
-            var request = ClientAuth.createUnauthorizedRequestBuilder("/leaderboard?page=" + page).GET().build();
+            var path = "/leaderboard?page=" + page;
+            if (apiDay != null)
+                path = path + "&date=" + apiDay;
+            var request = ClientAuth.createUnauthorizedRequestBuilder(path).GET().build();
             HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
 
                 var json = processResponse(resp, error);

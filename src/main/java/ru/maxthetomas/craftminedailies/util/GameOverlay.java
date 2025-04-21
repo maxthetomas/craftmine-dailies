@@ -116,4 +116,7 @@ public class GameOverlay {
         }
     }
 
+    public static void customScreenRenderTimer(Minecraft minecraft, GuiGraphics guiGraphics, int width, int height) {
+        guiGraphics.drawString(minecraft.font, TimeFormatters.formatTime(TimeFormatters.secondsUntilNextDaily()), width - 50, 10, 0xFFFFFF);
+    }
 }

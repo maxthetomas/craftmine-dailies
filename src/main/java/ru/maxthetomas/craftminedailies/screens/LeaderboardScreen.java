@@ -7,13 +7,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.gui.components.SpriteIconButton;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.glfw.GLFW;
+import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
+import ru.maxthetomas.craftminedailies.util.GameOverlay;
+import ru.maxthetomas.craftminedailies.util.Month;
 import ru.maxthetomas.craftminedailies.util.TimeFormatters;
 
 import java.util.HashMap;
@@ -24,8 +30,20 @@ import java.util.concurrent.CompletableFuture;
 public class LeaderboardScreen extends Screen {
     public LeaderboardScreen(int startPage) {
         super(Component.translatable("craftminedailies.screen.leaderboard.title"));
+        this.currentPageIdx = startPage;
         actualRefresh();
     }
+
+    public LeaderboardScreen(String apiDay, Screen parent) {
+        super(Component.translatable("craftminedailies.screen.leaderboard.title"));
+        this.currentPageIdx = 0;
+        this.apiDay = apiDay;
+        this.parent = parent;
+        actualRefresh();
+    }
+
+    Screen parent;
+    String apiDay = null;
 
     Button backButton;
     Button frontButton;
@@ -43,9 +61,35 @@ public class LeaderboardScreen extends Screen {
         this.frontButton = addRenderableWidget(Button.builder(Component.literal(">"), (b) -> {
             attemptListRight();
         }).bounds(this.width / 2 + 80, this.height - 30, 20, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("craftminedailies.close"), (b) -> {
-            minecraft.setScreen(new TitleScreen());
-        }).bounds(10, this.height - 30, 50, 20).build());
+
+        if (parent == null) {
+            addRenderableWidget(Button.builder(Component.translatable("craftminedailies.close"), (b) -> {
+                minecraft.setScreen(new TitleScreen());
+            }).bounds(10, this.height - 30, 50, 20).build());
+
+            addHistory();
+        } else {
+            addRenderableWidget(Button.builder(Component.translatable("craftminedailies.back"), (b) -> {
+                minecraft.setScreen(parent);
+            }).bounds(10, this.height - 30, 50, 20).build());
+        }
+    }
+
+    void addHistory() {
+        var btn = SpriteIconButton.builder(
+                        Component.translatable("craftminedailies.button.leaderboards"),
+                        (but) -> {
+                            this.minecraft.setScreen(new LeaderboardCalendarScreen(Month.current(), this));
+                        }, true)
+                .sprite(ResourceLocation.fromNamespaceAndPath(CraftmineDailies.MOD_ID, "icon/history"),
+                        16, 16)
+                .width(20)
+                .tooltip(Tooltip.create(Component.translatable("craftminedailies.button.history")))
+                .build();
+
+        btn.setRectangle(20, 20, 10, this.height - 30 - 20 - 2);
+
+        addRenderableWidget(btn);
     }
 
     record ProfileData(String name, PlayerSkin skin) {
@@ -89,7 +133,14 @@ public class LeaderboardScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int i, int j, float f) {
         super.render(guiGraphics, i, j, f);
 
-        guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.title"), this.width / 2, 15, 0xFFFFFF);
+        GameOverlay.customScreenRenderTimer(minecraft, guiGraphics, width, height);
+
+        if (apiDay != null) {
+            guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.title.withDay",
+                    Month.fromApiDay(apiDay).getComponentRepresentation()), this.width / 2, 15, 0xFFFFFF);
+        } else {
+            guiGraphics.drawCenteredString(this.font, Component.translatable("craftminedailies.leaderboards.title"), this.width / 2, 15, 0xFFFFFF);
+        }
 
         if (backButton != null)
             backButton.active = canListLeft();
@@ -130,6 +181,14 @@ public class LeaderboardScreen extends Screen {
             var y = 38 + a * 17;
             renderResultAt(guiGraphics, y, currentPageIdx * 10 + a + 1, results.get(a), selectedRun == a);
         }
+    }
+
+    @Override
+    public void onClose() {
+        super.onClose();
+
+        if (this.parent != null)
+            minecraft.setScreen(parent);
     }
 
     public static String getNameFromUUID(UUID uuid, String fallback) {
@@ -183,7 +242,7 @@ public class LeaderboardScreen extends Screen {
             var currentRun = getCurrentlySelectedRun((int) d, (int) e);
             if (currentRun != -1 && currentRun < results.size()) {
                 var runId = results.get(currentRun).runId;
-                this.minecraft.setScreen(new RunDetailsScreen(this, runId));
+                this.minecraft.setScreen(new RunDetailsScreen(this, runId, apiDay));
                 return true;
             }
         }
@@ -222,7 +281,7 @@ public class LeaderboardScreen extends Screen {
     }
 
     void actualRefresh() {
-        futureGetter = ApiManager.fetchLeaderboardPage(currentPageIdx);
+        futureGetter = ApiManager.fetchLeaderboardPage(currentPageIdx, apiDay);
         futureGetter.whenComplete((v, er) -> {
             futureGetter = null;
             if (er != null) {

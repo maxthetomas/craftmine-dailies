@@ -5,6 +5,7 @@
   "craftminedailies.button.start.issue": "Could not get info!",
   "craftminedailies.button.leaderboards": "Leaderboard",
   "craftminedailies.button.returnToMenu": "Back to Title",
+  "craftminedailies.button.history": "Previous dailies",
   "craftminedailies.publish": "Daily runs cannot be published!",
   "craftminedailies.publish.button": "Not in daily",
   "craftminedailies.item.base": "Daily Mine base",
@@ -24,6 +25,7 @@
   "craftminedailies.run.time.time_out": "--:--",
   "craftminedailies.run.time.dnf": "--:--",
   "craftminedailies.leaderboards.title": "Leaderboard",
+  "craftminedailies.leaderboards.title.withDay": "Leaderboard for %s",
   "craftminedailies.leaderboards.page": "Page %s out of %s",
   "craftminedailies.leaderboards.player": "Player",
   "craftminedailies.leaderboards.score": "XP Got",
@@ -53,5 +55,31 @@
   "craftminedailies.run.time": "%s",
   "craftminedailies.run.score": "XP: %s",
   "craftminedailies.check_status": "Check your internet connection or server availability.\nContact us on Discord if this issue persists!",
-  "craftminedailies.version": "Craftmine Dailies ver. %s"
+  "craftminedailies.version": "Craftmine Dailies ver. %s",
+  "craftminedailies.month": "%s, %s",
+  "craftminedailies.month.january": "January",
+  "craftminedailies.month.february": "February",
+  "craftminedailies.month.march": "March",
+  "craftminedailies.month.april": "April",
+  "craftminedailies.month.may": "May",
+  "craftminedailies.month.june": "June",
+  "craftminedailies.month.july": "July",
+  "craftminedailies.month.august": "August",
+  "craftminedailies.month.september": "September",
+  "craftminedailies.month.october": "October",
+  "craftminedailies.month.november": "November",
+  "craftminedailies.month.december": "December",
+  "craftminedailies.calendar.title": "Daily calendar",
+  "craftminedailies.calendar.back": "<",
+  "craftminedailies.calendar.next": ">"
 }
+
+
+
+
+
+
+
+
+
+

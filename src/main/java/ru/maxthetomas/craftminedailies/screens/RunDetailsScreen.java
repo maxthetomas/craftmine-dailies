@@ -20,8 +20,11 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.mines.WorldEffect;
 import net.minecraft.world.level.mines.WorldEffects;
+import org.jetbrains.annotations.Nullable;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.auth.RunDetails;
+import ru.maxthetomas.craftminedailies.util.GameOverlay;
+import ru.maxthetomas.craftminedailies.util.Month;
 import ru.maxthetomas.craftminedailies.util.TimeFormatters;
 
 import java.util.List;
@@ -35,9 +38,12 @@ public class RunDetailsScreen extends Screen {
     private static final ResourceLocation ADVANCEMENT_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/gui/sprites/advancements/task_frame_unobtained.png");
     private final LeaderboardScreen parent;
 
-    public RunDetailsScreen(LeaderboardScreen parent, int runId) {
+    String apiDay;
+
+    public RunDetailsScreen(LeaderboardScreen parent, int runId, @Nullable String apiDay) {
         super(Component.translatableWithFallback("craftminedailies.screen.runDetails", "Run Details"));
         this.parent = parent;
+        this.apiDay = apiDay;
         ApiManager.fetchRunDetails(runId).whenComplete((runDetails, throwable) -> {
             if (throwable != null) {
                 // todo handle better
@@ -80,6 +86,8 @@ public class RunDetailsScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int i, int j, float f) {
         super.render(guiGraphics, i, j, f);
 
+        GameOverlay.customScreenRenderTimer(minecraft, guiGraphics, width, height);
+
         this.xMouse = i;
         this.yMouse = j;
 
@@ -97,6 +105,14 @@ public class RunDetailsScreen extends Screen {
     }
 
     private void renderPlayerInfo(GuiGraphics guiGraphics) {
+        if (apiDay != null) {
+            var day = Month.fromApiDay(apiDay);
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().scale(0.5f, 0.5f, 0.5f);
+            guiGraphics.drawString(this.font, day.getComponentRepresentation(), xBase * 2, 16 * 2, 0xFFFFFF);
+            guiGraphics.pose().popPose();
+        }
+
         PlayerFaceRenderer.draw(guiGraphics, getOrAddCache(minecraft, details.playerUuid()), xBase, 24, 16);
         guiGraphics.drawString(this.font, getNameFromUUID(details.playerUuid(), details.playerOfflineName()), xBase + 16 + 6, 24 + 4, 0xFFFFFF);
 
