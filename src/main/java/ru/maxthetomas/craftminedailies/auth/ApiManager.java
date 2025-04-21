@@ -4,10 +4,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.logging.LogUtils;
+import com.mojang.serialization.JsonOps;
 import com.mojang.util.UndashedUuid;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
@@ -18,6 +20,7 @@ import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.auth.meta.ApiMeta;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
 import ru.maxthetomas.craftminedailies.util.EndContext;
+import ru.maxthetomas.craftminedailies.util.GameOverlay;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -57,13 +60,16 @@ public class ApiManager {
         try {
             HttpClient.newHttpClient().sendAsync(ClientAuth.createUnauthorizedRequestBuilder("/today").GET().build(),
                     HttpResponse.BodyHandlers.ofString()).whenComplete((data, error) -> {
+                var json = processResponse(data, error);
+
                 if (error != null) {
                     LOGGER.error("Cannot fetch today daily run details!", error);
                     DailyFetchError = true;
                     TodayDetails = null;
+                    GameOverlay.pushNotification(Component.translatable("craftminedailies.check_status"));
+                    return;
                 }
 
-                var json = JsonParser.parseString(data.body());
                 TodayDetails = DailyDetails.fromJson(json.getAsJsonObject());
                 DailyFetchError = false;
             });
@@ -138,12 +144,13 @@ public class ApiManager {
         try {
             var request = ClientAuth.createUnauthorizedRequestBuilder("/leaderboard?page=" + page).GET().build();
             HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
+
+                var json = processResponse(resp, error);
+
                 if (error != null) {
                     future.completeExceptionally(error);
                     return;
                 }
-
-                var json = processResponse(resp, error);
 
                 if (json == null) {
                     future.completeExceptionally(new Exception("Error processing json"));
@@ -184,12 +191,12 @@ public class ApiManager {
         try {
             var request = ClientAuth.createUnauthorizedRequestBuilder("/run/" + runId).GET().build();
             HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
+                var json = processResponse(resp, error);
+
                 if (error != null) {
                     future.completeExceptionally(error);
                     return;
                 }
-
-                var json = processResponse(resp, error);
 
                 if (json == null) {
                     future.completeExceptionally(new Exception("Error processing json"));
@@ -215,12 +222,12 @@ public class ApiManager {
         try {
             var request = ClientAuth.createUnauthorizedRequestBuilder("/ver").GET().build();
             HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((resp, error) -> {
+                var json = processResponse(resp, error);
+
                 if (error != null) {
                     future.completeExceptionally(error);
                     return;
                 }
-
-                var json = processResponse(resp, error);
 
                 if (json == null) {
                     future.completeExceptionally(new Exception("Error processing json"));
@@ -245,30 +252,47 @@ public class ApiManager {
         if (error != null) {
             LOGGER.error("An error while sending request!", error);
             CraftmineDailies.showErrorMessage(Component.translatable("craftminedailies.errors.general_networking")
-                    .withStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(Component.literal(error.getMessage())))), true);
+                            .withStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(Component.literal(error.getMessage())))),
+                    CraftmineDailies.isInDaily());
+
             return null;
         }
 
-        var jsonResp = JsonParser.parseString(response.body()).getAsJsonObject();
+        JsonObject jsonResp = null;
+
+        try {
+            jsonResp = JsonParser.parseString(response.body()).getAsJsonObject();
+        } catch (Exception e) {
+            LOGGER.error("Could not parse response JSON", e);
+        }
 
         var code = response.statusCode();
-        if (code != 200) {
-            if (jsonResp.has("error")) {
-                var errorObj = jsonResp.getAsJsonObject("error");
-                var reset = errorObj.has("reset") && errorObj.get("reset").getAsBoolean();
-                var message = errorObj.get("message").getAsString();
-                CraftmineDailies.showErrorMessage(Component.literal(message), reset);
-                return null;
-            }
-
-            switch (code) {
-                case 401 -> CraftmineDailies.showErrorMessage(
+        if (code != 200 && jsonResp == null) {
+            if (code == 401) {
+                CraftmineDailies.showErrorMessage(
                         Component.translatable("craftminedailies.errors.unauthorized"), true);
-                case 403 -> CraftmineDailies.showErrorMessage(
-                        Component.translatable("craftminedailies.errors.already_attempted"), false);
             }
 
             return null;
+        }
+
+        if (jsonResp != null) {
+            if (jsonResp.has("error")) {
+                var errorObj = jsonResp.getAsJsonObject("error");
+                var reset = errorObj.has("reset") && errorObj.get("reset").getAsBoolean();
+                var message = ComponentSerialization.CODEC.decode(JsonOps.INSTANCE, errorObj.get("message"));
+                CraftmineDailies.showErrorMessage(message.getOrThrow().getFirst(), reset);
+                return null;
+            }
+
+            if (jsonResp.has("overlay_messages")) {
+                ComponentSerialization.CODEC.listOf().fieldOf("overlay_messages")
+                        .decoder().decode(JsonOps.INSTANCE, jsonResp).ifSuccess(s -> {
+                            for (Component msg : s.getFirst()) {
+                                GameOverlay.pushNotification(msg);
+                            }
+                        });
+            }
         }
 
         return jsonResp;

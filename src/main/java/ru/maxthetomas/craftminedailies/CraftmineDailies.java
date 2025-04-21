@@ -17,7 +17,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerUnlock;
@@ -34,6 +33,7 @@ import ru.maxthetomas.craftminedailies.mixin.common.LivingEntityInvoker;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
 import ru.maxthetomas.craftminedailies.screens.NonDeathDailyEndScreen;
 import ru.maxthetomas.craftminedailies.util.EndContext;
+import ru.maxthetomas.craftminedailies.util.GameOverlay;
 import ru.maxthetomas.craftminedailies.util.WorldCreationUtil;
 import ru.maxthetomas.craftminedailies.util.ends.DeathEndContext;
 import ru.maxthetomas.craftminedailies.util.ends.IllegitimateEndContext;
@@ -78,7 +78,6 @@ public class CraftmineDailies implements ModInitializer {
 
     // If run has ended for any reason.
     protected static boolean ENDED = false;
-    protected static boolean WORLD_STARTED = false;
 
     private static int ticksToExpUpdate = 10;
     public static int CACHED_CURRENT_INV_EXP = 0;
@@ -107,7 +106,7 @@ public class CraftmineDailies implements ModInitializer {
             player.addTag(PLAYER_AWARDED_TAG);
             player.giveExperiencePoints(ApiManager.TodayDetails.xp());
 
-            server.schedule(new TickTask(server.getTickCount() + 20, this::showErrorIfUnauthorized));
+            showErrorIfUnauthorized();
 
             ENDED = false;
         });
@@ -144,6 +143,11 @@ public class CraftmineDailies implements ModInitializer {
                 var inv = InventoryMeta.createForPlayer(player.getPlayer());
                 dailyEnded(new IllegitimateEndContext(getRemainingTime(server)), inv);
             }
+
+            // Reset variables
+            ENDED = true;
+            GAME_TIME_AT_START = -1;
+            REMAINING_TIME_CACHE = -1;
         });
 
         ServerTickEvents.END_WORLD_TICK.register(s -> {
@@ -227,6 +231,8 @@ public class CraftmineDailies implements ModInitializer {
     public static void openLeaderboard(int startPage) {
         Minecraft.getInstance().setScreen(new LeaderboardScreen(startPage));
         fetchToday();
+
+        lastPlayedSeed = -1;
     }
 
     public static void openLeaderboard() {
@@ -255,6 +261,7 @@ public class CraftmineDailies implements ModInitializer {
         ApiManager.submitRunEnd(endContext, ApiMeta.createMeta(meta));
 
         // Reset
+        ENDED = true;
         GAME_TIME_AT_START = -1;
         REMAINING_TIME_CACHE = -1;
     }
@@ -271,8 +278,8 @@ public class CraftmineDailies implements ModInitializer {
     }
 
     public static void showErrorMessage(Component component, boolean resetDaily) {
-        Minecraft.getInstance().getChatListener().handleSystemMessage(Component.translatable("craftminedailies.errors.base" + (resetDaily ? "_with_reset" : ""), component)
-                .withStyle(ChatFormatting.RED), false);
+        GameOverlay.pushNotification(Component.translatable("craftminedailies.errors.base" + (resetDaily ? "_with_reset" : ""),
+                component).withStyle(ChatFormatting.RED));
 
         if (resetDaily) {
             resetDailyProgression();

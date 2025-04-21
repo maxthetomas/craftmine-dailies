@@ -11,10 +11,10 @@
   "craftminedailies.item.mine": "Daily Mine",
   "craftminedailies.death.score": "Experience (items): %s",
   "craftminedailies.death.time": "Remaining time: %s",
-  "craftminedailies.errors.base": "There was an error while communicating with the server: %s",
-  "craftminedailies.errors.base_with_reset": "There was an error while communicating to the server: %s (You can attempt the daily run again!)",
+  "craftminedailies.errors.base": "An error occurred:\n%s",
+  "craftminedailies.errors.base_with_reset": "An error occurred:\n%s\n(You can attempt the daily run again!)",
   "craftminedailies.errors.general_networking": "Network error",
-  "craftminedailies.errors.unauthorized": "Could not authorize your player. Try restarting the game if issue persists.",
+  "craftminedailies.errors.unauthorized": "Could not authorize your player.\nTry restarting the game if this issue persists.",
   "craftminedailies.errors.already_attempted": "You have already attempted a daily run!",
   "craftminedailies.screen.end": "Completed Daily Run",
   "craftminedailies.run.state.win": "Won",
@@ -51,5 +51,6 @@
   "craftminedailies.run.unlocks": "Player unlocks",
   "craftminedailies.run.effects": "World ingredients",
   "craftminedailies.run.time": "%s",
-  "craftminedailies.run.score": "XP: %s"
+  "craftminedailies.run.score": "XP: %s",
+  "craftminedailies.check_status": "Check your internet connection or server availability.\nContact us on Discord if this issue persists!"
 }

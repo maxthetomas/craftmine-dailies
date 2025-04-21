@@ -17,6 +17,7 @@
   ],
   "client": [
     "client.DeathScreenMixin",
+    "client.GameRendererMixin",
     "client.HudMixin",
     "client.IntegratedServerMixin",
     "client.MinecraftAccessor",
