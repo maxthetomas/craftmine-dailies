@@ -102,6 +102,10 @@ public abstract class TitleScreenMixin extends Screen {
         guiGraphics.drawString(minecraft.font, formatTime(secondsUntilNextDaily()),
                 x, y - 1, whiteWithAlpha);
 
+        // Left bottom
+        guiGraphics.drawString(minecraft.font, Component.translatable("craftminedailies.version", CraftmineDailies.getStringVersion()),
+                2, this.height - 20, whiteWithAlpha);
+
         renderUpdate(guiGraphics, whiteWithAlpha);
     }
 

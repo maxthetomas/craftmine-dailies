@@ -64,6 +64,7 @@ public record ApiMeta(
         obj.addProperty("game_time", ticks());
         obj.addProperty("player_uuid", playerUUID().toString());
         obj.addProperty("mod_version", CraftmineDailies.VERSION);
+        obj.addProperty("mod_version_string", CraftmineDailies.getStringVersion());
         obj.add("inventory", inventoryMeta.toJson());
 
         var effects = new JsonArray();

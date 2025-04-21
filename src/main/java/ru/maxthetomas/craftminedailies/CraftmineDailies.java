@@ -51,6 +51,7 @@ public class CraftmineDailies implements ModInitializer {
     public static final String WORLD_NAME = "_cmd_daily";
 
     public static final int VERSION = 6;
+    private static String VERSION_STRING = String.valueOf(VERSION);
     public static boolean HAS_UPDATES = false;
 
     private static Path lastDailySeedPath;
@@ -82,14 +83,23 @@ public class CraftmineDailies implements ModInitializer {
     private static int ticksToExpUpdate = 10;
     public static int CACHED_CURRENT_INV_EXP = 0;
 
+    public static String getStringVersion() {
+        return VERSION_STRING;
+    }
+
     @Override
     public void onInitialize() {
         lastDailySeedPath = Path.of(FabricLoader.getInstance().getConfigDir().toString() + "/", ".cd_last_played_seed");
+
+        // Load this mod by mod's ID
+        VERSION_STRING = FabricLoader.getInstance().getModContainer(MOD_ID)
+                .get().getMetadata().getVersion().getFriendlyString();
+
+
+        checkForUpdates();
         ClientAuth.create();
         restoreLastPlayedSeed();
         fetchToday();
-
-        checkForUpdates();
 
         ServerPlayConnectionEvents.JOIN.register((serverPlayer,
                                                   packetListener, server) -> {

@@ -52,5 +52,6 @@
   "craftminedailies.run.effects": "World ingredients",
   "craftminedailies.run.time": "%s",
   "craftminedailies.run.score": "XP: %s",
-  "craftminedailies.check_status": "Check your internet connection or server availability.\nContact us on Discord if this issue persists!"
+  "craftminedailies.check_status": "Check your internet connection or server availability.\nContact us on Discord if this issue persists!",
+  "craftminedailies.version": "Craftmine Dailies ver. %s"
 }

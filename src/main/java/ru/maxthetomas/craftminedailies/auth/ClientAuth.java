@@ -94,7 +94,9 @@ public class ClientAuth {
         if (!path.startsWith("/"))
             path = "/" + path;
 
-        return HttpRequest.newBuilder().header("User-Agent", String.format("maxthetomas/craftmine-dailies (%s)", CraftmineDailies.VERSION)).uri(URI.create(BASE_API.toString() + path));
+        return HttpRequest.newBuilder().header("User-Agent",
+                String.format("maxthetomas/craftmine-dailies (%s/%s)", CraftmineDailies.getStringVersion(),
+                        CraftmineDailies.VERSION)).uri(URI.create(BASE_API.toString() + path));
     }
 
     static HttpRequest.Builder updateRequestBuilder(HttpRequest.Builder builder) {
