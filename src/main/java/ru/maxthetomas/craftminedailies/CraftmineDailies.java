@@ -231,8 +231,6 @@ public class CraftmineDailies implements ModInitializer {
     public static void openLeaderboard(int startPage) {
         Minecraft.getInstance().setScreen(new LeaderboardScreen(startPage));
         fetchToday();
-
-        lastPlayedSeed = -1;
     }
 
     public static void openLeaderboard() {
