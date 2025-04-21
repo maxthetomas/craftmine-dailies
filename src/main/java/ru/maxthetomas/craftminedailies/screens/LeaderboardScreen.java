@@ -126,8 +126,8 @@ public class LeaderboardScreen extends Screen {
         return minecraft.getSkinManager().getInsecureSkin(new GameProfile(uuid, ""));
     }
 
-    private static List<Result> results = null;
-    private static CompletableFuture<ApiManager.LeaderboardFetch> futureGetter;
+    private List<Result> results = null;
+    private CompletableFuture<ApiManager.LeaderboardFetch> futureGetter;
 
     @Override
     public void render(GuiGraphics guiGraphics, int i, int j, float f) {
