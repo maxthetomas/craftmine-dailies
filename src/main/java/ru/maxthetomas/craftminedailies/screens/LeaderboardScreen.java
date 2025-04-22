@@ -6,11 +6,11 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.components.SpriteIconButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+
+import static ru.maxthetomas.craftminedailies.util.GameOverlay.drawPlayerHead;
 
 public class LeaderboardScreen extends Screen {
     public LeaderboardScreen(int startPage) {
@@ -218,7 +220,7 @@ public class LeaderboardScreen extends Screen {
         var style = Style.EMPTY.withUnderlined(selected);
         graphics.drawString(this.font,
                 Component.literal(String.format("%s.", order)), x - 4 - 20, yText, 0xFFFFFF);
-        PlayerFaceRenderer.draw(graphics, getOrAddCache(minecraft, result.playerId), x + 4, y + 4, 12);
+        GameOverlay.drawPlayerHead(graphics, getOrAddCache(minecraft, result.playerId), x + 4, y + 4, 12);
         graphics.drawString(this.font, Component.literal(getNameFromUUID(result.playerId, result.offlineName)).withStyle(style), x + 7 + 16, yText, 0xFFFFFF);
         graphics.drawString(this.font, Component.literal(String.valueOf(result.xp)), x + 130, yText, 0xFFFFFF);
         graphics.drawString(this.font, getTime(result), x + 172, yText, 0xFFFFFF);
