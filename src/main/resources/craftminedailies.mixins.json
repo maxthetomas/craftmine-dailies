@@ -11,6 +11,7 @@
     "common.PlayerAdvancementsMixin",
     "common.PlayerListMixin",
     "common.PrimaryLevelDataAccessor",
+    "common.PrimaryLevelDataMixin",
     "common.ServerLevelAccessor",
     "common.ServerLevelMixin",
     "common.ServerPlayerAccessor"

@@ -42,11 +42,13 @@ import java.util.function.Function;
 public class WorldCreationUtil {
 
     public static Logger LOGGER = LogUtils.getLogger();
+    public static boolean IS_CREATING_DAILY = false;
 
     // Add this method to your CreateWorldScreen class or a suitable utility class
     public static void createAndLoadDaily(
             ApiManager.DailyDetails dailyDetails
     ) {
+        IS_CREATING_DAILY = true;
         String worldName = CraftmineDailies.WORLD_NAME;
         Minecraft minecraft = Minecraft.getInstance();
         GameType gameType = GameType.SURVIVAL;
@@ -194,6 +196,7 @@ public class WorldCreationUtil {
                         primaryLevelData
                 );
 
+        IS_CREATING_DAILY = false;
     }
 
     private static void updateLevelData(PrimaryLevelData primaryLevelData, ApiManager.DailyDetails dailyDetails) {
