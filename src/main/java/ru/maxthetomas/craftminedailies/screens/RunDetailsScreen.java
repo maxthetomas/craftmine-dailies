@@ -4,7 +4,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -113,7 +112,7 @@ public class RunDetailsScreen extends Screen {
             guiGraphics.pose().popPose();
         }
 
-        PlayerFaceRenderer.draw(guiGraphics, getOrAddCache(minecraft, details.playerUuid()), xBase, 24, 16);
+        GameOverlay.drawPlayerHead(guiGraphics, getOrAddCache(minecraft, details.playerUuid()), xBase, 24, 16);
         guiGraphics.drawString(this.font, getNameFromUUID(details.playerUuid(), details.playerOfflineName()), xBase + 16 + 6, 24 + 4, 0xFFFFFF);
 
     }
