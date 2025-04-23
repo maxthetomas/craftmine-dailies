@@ -8,6 +8,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.SpriteIconButton;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.resources.PlayerSkin;
@@ -67,11 +68,27 @@ public class LeaderboardScreen extends Screen {
             }).bounds(10, this.height - 30, 50, 20).build());
 
             addHistory();
+            addDiscord();
         } else {
             addRenderableWidget(Button.builder(Component.translatable("craftminedailies.back"), (b) -> {
                 minecraft.setScreen(parent);
             }).bounds(10, this.height - 30, 50, 20).build());
         }
+    }
+
+    void addDiscord() {
+        var btn = SpriteIconButton.builder(
+                        Component.translatable("craftminedailies.button.discord"),
+                        ConfirmLinkScreen.confirmLink(this, CraftmineDailies.DISCORD_URL), true)
+                .sprite(ResourceLocation.fromNamespaceAndPath(CraftmineDailies.MOD_ID, "icon/discord"),
+                        15, 15)
+                .width(20)
+                .tooltip(Tooltip.create(Component.translatable("craftminedailies.button.discord")))
+                .build();
+
+        btn.setRectangle(20, 20, 10 + 22, this.height - 30 - 20 - 2);
+
+        addRenderableWidget(btn);
     }
 
     void addHistory() {
@@ -90,6 +107,7 @@ public class LeaderboardScreen extends Screen {
 
         addRenderableWidget(btn);
     }
+
 
     record ProfileData(String name, GameProfile profile, PlayerSkin skin) {
     }

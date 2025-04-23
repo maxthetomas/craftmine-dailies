@@ -29,6 +29,7 @@ import ru.maxthetomas.craftminedailies.util.ends.IllegitimateEndContext;
 import ru.maxthetomas.craftminedailies.util.ends.TimeOutContext;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +38,8 @@ import java.util.List;
 public class CraftmineDailies implements ModInitializer {
     public static final String MOD_ID = "craftminedailies";
     public static final String WORLD_NAME = "_cmd_daily";
+
+    public static final URI DISCORD_URL = URI.create("https://discord.gg/VAC7ZMTuPU");
 
     // Enables registration and use of experimental daily world components
     public static final boolean EXPERIMENTAL = false;
