@@ -1,14 +1,15 @@
 package ru.maxthetomas.craftminedailies.util;
 
 import com.google.gson.JsonObject;
+import ru.maxthetomas.craftminedailies.CraftmineDailies;
 
 public abstract class EndContext {
     private final int experience;
-    private final int remainingTime;
+    private final int passedTime;
 
-    protected EndContext(int experience, int remainingTime) {
+    protected EndContext(int experience, int passedTime) {
         this.experience = experience;
-        this.remainingTime = remainingTime;
+        this.passedTime = passedTime;
     }
 
     public abstract boolean isWin();
@@ -19,8 +20,8 @@ public abstract class EndContext {
         return experience;
     }
 
-    public int getRemainingTime() {
-        return remainingTime;
+    public int getPassedTime() {
+        return passedTime;
     }
 
     public JsonObject getAsJson() {
@@ -28,7 +29,9 @@ public abstract class EndContext {
         json.addProperty("type", getStringName());
         json.addProperty("is_win", isWin());
         json.addProperty("experience", experience);
-        json.addProperty("remaining_time", remainingTime);
+        // For backward compat
+        json.addProperty("remaining_time", CraftmineDailies.DEFAULT_MAX_GAME_TIME - passedTime);
+        json.addProperty("passed_time", passedTime);
         return json;
     }
 }

@@ -13,8 +13,8 @@ public class DeathEndContext extends EndContext {
     private final ServerPlayer player;
     private final DamageSource source;
 
-    public DeathEndContext(int experience, int remainingTime, ServerPlayer player, DamageSource source) {
-        super(experience, remainingTime);
+    public DeathEndContext(int experience, int passedTime, ServerPlayer player, DamageSource source) {
+        super(experience, passedTime);
         this.player = player;
         this.source = source;
     }

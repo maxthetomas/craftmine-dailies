@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.mines.WorldEffect;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.auth.meta.InventoryMeta;
 import ru.maxthetomas.craftminedailies.screens.NonDeathDailyEndScreen;
+import ru.maxthetomas.craftminedailies.util.DailiesUtil;
 import ru.maxthetomas.craftminedailies.util.ends.WinEndContext;
 
 @Mixin(ServerLevel.class)
@@ -33,6 +35,9 @@ public abstract class ServerLevelMixin {
 
     @Shadow
     public abstract void levelEvent(@Nullable Entity entity, int i, BlockPos blockPos, int j);
+
+    @Shadow
+    public abstract @NotNull TheGame theGame();
 
     @Inject(method = "dropUnlockEffect", at = @At("HEAD"), cancellable = true)
     void dropEffect(Vec3 vec3, WorldEffect worldEffect, ServerPlayer serverPlayer, CallbackInfo ci) {
@@ -49,12 +54,12 @@ public abstract class ServerLevelMixin {
 
         var inventoryMeta = InventoryMeta.createForPlayer(serverPlayer);
         var ctx = new WinEndContext(
-                CraftmineDailies.getPlayerInventoryValue(serverPlayer, (ServerLevel) (Object) this, false, 1.0),
-                CraftmineDailies.getRemainingTime(this.theGame.server()));
+                DailiesUtil.getPlayerInventoryValue(serverPlayer, (ServerLevel) (Object) this, false, 1.0),
+                CraftmineDailies.getPassedTime((ServerLevel) (Object) this)
+        );
         CraftmineDailies.dailyEnded(ctx, inventoryMeta);
 
         var minecraft = Minecraft.getInstance();
-        var server = serverPlayer.serverLevel().theGame().server();
 
         minecraft.schedule(() -> {
             if (minecraft.level != null) {

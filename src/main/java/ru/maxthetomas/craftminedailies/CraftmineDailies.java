@@ -1,7 +1,5 @@
 package ru.maxthetomas.craftminedailies;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -13,36 +11,25 @@ import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.GenericMessageScreen;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerUnlock;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.mines.WorldEffect;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.auth.ClientAuth;
 import ru.maxthetomas.craftminedailies.auth.meta.ApiMeta;
 import ru.maxthetomas.craftminedailies.auth.meta.InventoryMeta;
+import ru.maxthetomas.craftminedailies.content.DailyWorldEffects;
 import ru.maxthetomas.craftminedailies.mixin.common.LivingEntityInvoker;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
 import ru.maxthetomas.craftminedailies.screens.NonDeathDailyEndScreen;
-import ru.maxthetomas.craftminedailies.util.DefaultDataPackLoader;
-import ru.maxthetomas.craftminedailies.util.EndContext;
-import ru.maxthetomas.craftminedailies.util.GameOverlay;
-import ru.maxthetomas.craftminedailies.util.WorldCreationUtil;
+import ru.maxthetomas.craftminedailies.util.*;
 import ru.maxthetomas.craftminedailies.util.ends.DeathEndContext;
 import ru.maxthetomas.craftminedailies.util.ends.IllegitimateEndContext;
 import ru.maxthetomas.craftminedailies.util.ends.TimeOutContext;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -50,6 +37,9 @@ import java.util.List;
 public class CraftmineDailies implements ModInitializer {
     public static final String MOD_ID = "craftminedailies";
     public static final String WORLD_NAME = "_cmd_daily";
+
+    // Enables registration and use of experimental daily world components
+    public static final boolean EXPERIMENTAL = false;
 
     public static final int VERSION = 10;
     private static String VERSION_STRING = String.valueOf(VERSION);
@@ -60,7 +50,7 @@ public class CraftmineDailies implements ModInitializer {
 
     public static final String DAILY_SERVER_BRAND = "_cm_daily";
     public static final String PLAYER_AWARDED_TAG = "_cm_daily_xp_awarded";
-    public static final long MAX_GAME_TIME = 20 * 60 * 30;
+    public static final long DEFAULT_MAX_GAME_TIME = 20 * 60 * 30;
     protected static long GAME_TIME_AT_START = -1;
 
     public static final float XP_MULT = 100;
@@ -96,6 +86,8 @@ public class CraftmineDailies implements ModInitializer {
         VERSION_STRING = FabricLoader.getInstance().getModContainer(MOD_ID)
                 .get().getMetadata().getVersion().getFriendlyString();
 
+
+        DailyWorldEffects.bootstrap();
 
         ClientAuth.createApiPath();
         checkForUpdates();
@@ -138,9 +130,9 @@ public class CraftmineDailies implements ModInitializer {
 
             var inventoryMeta = InventoryMeta.createForPlayer(player);
 
-            var experience = getPlayerInventoryValue(player, player.serverLevel(), true, 0.5);
-            var ctx = new DeathEndContext(experience, getRemainingTime(player.serverLevel().theGame().server()),
-                    player, damageSource);
+            var hasPenalty = DailyWorldEffects.shouldApplyDeathPenalty(player.serverLevel());
+            var experience = DailiesUtil.getPlayerInventoryValue(player, player.serverLevel(), hasPenalty, hasPenalty ? 0.5f : 1f);
+            var ctx = new DeathEndContext(experience, CraftmineDailies.getPassedTime(player.serverLevel()), player, damageSource);
 
             dailyEnded(ctx, inventoryMeta);
 
@@ -152,7 +144,7 @@ public class CraftmineDailies implements ModInitializer {
         ServerPlayConnectionEvents.DISCONNECT.register((player, server) -> {
             if (isInDaily() && GAME_TIME_AT_START != -1) {
                 var inv = InventoryMeta.createForPlayer(player.getPlayer());
-                dailyEnded(new IllegitimateEndContext(getRemainingTime(server)), inv);
+                dailyEnded(new IllegitimateEndContext(getPassedTime(player.getPlayer().serverLevel())), inv);
             }
 
             // Reset variables
@@ -178,10 +170,10 @@ public class CraftmineDailies implements ModInitializer {
             if (--ticksToExpUpdate < 0 && !s.players().isEmpty()) {
                 ticksToExpUpdate = 10;
                 var player = s.players().getFirst();
-                CACHED_CURRENT_INV_EXP = getPlayerInventoryValue(player, player.serverLevel(), false, 1.0);
+                CACHED_CURRENT_INV_EXP = DailiesUtil.getPlayerInventoryValue(player, player.serverLevel(), false, 1.0);
             }
 
-            var remainingTime = getRemainingTime(s.theGame().server());
+            var remainingTime = getRemainingTime(s);
 
             if (remainingTime == 20 * 60 * 10)
                 s.theGame().playerList().broadcastSystemMessage(REMINDER_TIME_10M, false);
@@ -191,7 +183,8 @@ public class CraftmineDailies implements ModInitializer {
             if (remainingTime <= 0) {
                 var player = Minecraft.getInstance().getSingleplayerServer().theGame().playerList().getPlayers().get(0);
                 var inventoryMeta = InventoryMeta.createForPlayer(player);
-                var context = new TimeOutContext(getPlayerInventoryValue(player, player.serverLevel(), true, 0.5));
+                var context = new TimeOutContext(DailiesUtil.getPlayerInventoryValue(player, player.serverLevel(),
+                        true, 0.5), getPassedTime(player.serverLevel()));
                 dailyEnded(context, inventoryMeta);
 
                 var minecraft = Minecraft.getInstance();
@@ -211,6 +204,9 @@ public class CraftmineDailies implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPED.register(stopped -> {
             WorldCreationUtil.tryDeleteWorld();
         });
+
+        if (FabricLoader.getInstance().isDevelopmentEnvironment())
+            DataDumper.dumpData();
     }
 
     private void showErrorIfUnauthorized() {
@@ -276,8 +272,12 @@ public class CraftmineDailies implements ModInitializer {
         REMAINING_TIME_CACHE = -1;
     }
 
-    public static int getRemainingTime(MinecraftServer server) {
-        return (int) (MAX_GAME_TIME - server.theGame().overworld().getGameTime() + GAME_TIME_AT_START);
+    public static int getRemainingTime(ServerLevel mineLevel) {
+        return (int) (DailyWorldEffects.getDailyEndTime(mineLevel) - getPassedTime(mineLevel));
+    }
+
+    public static int getPassedTime(ServerLevel mineLevel) {
+        return (int) (mineLevel.getGameTime() - GAME_TIME_AT_START);
     }
 
     public static boolean shouldRenderInGameTimer() {
@@ -328,32 +328,6 @@ public class CraftmineDailies implements ModInitializer {
     }
 
     // Reimplement inventory value calculation for deaths.
-    public static int getPlayerInventoryValue(ServerPlayer player, ServerLevel level, boolean ignoreSelfPlacedWorldEffects, double extraScale) {
-        double totalXp = 0F;
-        for (ItemStack stack : player.getInventory()) {
-            var worldMods = stack.get(DataComponents.WORLD_MODIFIERS);
-            if (worldMods != null) continue;
-            else if (stack.is(ItemTags.CARRY_OVER)) continue;
-
-            var exchangeValueComponent = stack.getOrDefault(DataComponents.EXCHANGE_VALUE, Item.NO_EXCHANGE);
-            totalXp += exchangeValueComponent.getValue(player, stack);
-        }
-
-        double multiplier = 1.0F;
-        var todayEffects = ApiManager.TodayDetails.getEffects();
-        for (WorldEffect effect : level.getActiveEffects()) {
-            if (ignoreSelfPlacedWorldEffects) {
-                // Check that the effect is not forced
-                if (!todayEffects.contains(effect))
-                    continue;
-            }
-
-            multiplier *= effect.experienceModifier();
-        }
-
-        multiplier *= player.getAttributeValue(Attributes.EXPERIENCE_GAIN_MODIFIER);
-        return (int) (totalXp * multiplier * extraScale * XP_MULT);
-    }
 
     private static boolean isDailyWorld(ServerLevel level) {
         return level.theGame().getWorldData().getKnownServerBrands().stream().anyMatch(e -> e.equals(DAILY_SERVER_BRAND));
@@ -387,68 +361,4 @@ public class CraftmineDailies implements ModInitializer {
         });
     }
 
-    private static void dumpData() {
-        var json = new JsonObject();
-
-        var effects = new JsonObject();
-        BuiltInRegistries.WORLD_EFFECT.entrySet().forEach(entry -> {
-            var effect = entry.getValue();
-            var key = entry.getKey().location().toString();
-            var effectJson = new JsonObject();
-            effectJson.addProperty("weight", effect.randomWeight());
-            effectJson.addProperty("multiplayer_only", effect.multiplayerOnly());
-            effectJson.addProperty("unlock_mode", effect.unlockMode().toString().toLowerCase());
-            effectJson.addProperty("xp_multiplier", effect.experienceModifier());
-
-            var incompat = new JsonArray();
-            effect.incompatibleWith().forEach(we -> {
-                incompat.add("minecraft:" + we.key());
-            });
-            effectJson.add("incompatible_with", incompat);
-
-            effects.add(key, effectJson);
-        });
-        json.add("effects", effects);
-
-        var sets = new JsonObject();
-        BuiltInRegistries.WORLD_EFFECT_SET.entrySet().forEach(entry -> {
-            var setJson = new JsonObject();
-            var key = entry.getKey().location().toString();
-
-            setJson.addProperty("exclusive", entry.getValue().exclusive());
-
-            var effectList = new JsonArray();
-            entry.getValue().effects().forEach(eff -> effectList.add("minecraft:" + eff.key()));
-            setJson.add("effects", effectList);
-            sets.add(key, setJson);
-        });
-        json.add("effect_sets", sets);
-
-        var unlocks = new JsonObject();
-        BuiltInRegistries.PLAYER_UNLOCK.entrySet().forEach(entry -> {
-            var unlockJson = new JsonObject();
-            var key = entry.getKey().location().toString();
-
-            var disablesArray = new JsonArray();
-            entry.getValue().disables().forEach(disable -> {
-                disablesArray.add(disable.getRegisteredName());
-            });
-
-
-            unlockJson.add("disables", disablesArray);
-            unlockJson.addProperty("price", entry.getValue().unlockPrice());
-
-            entry.getValue().parent().ifPresentOrElse((unlock) ->
-                    unlockJson.addProperty("parent", unlock.getRegisteredName()), () -> unlockJson.addProperty("parent", "minecraft:empty"));
-
-            unlocks.add(key, unlockJson);
-        });
-        json.add("unlocks", unlocks);
-
-        try {
-            Files.writeString(Path.of("./effect_json_data.json"), json.toString(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

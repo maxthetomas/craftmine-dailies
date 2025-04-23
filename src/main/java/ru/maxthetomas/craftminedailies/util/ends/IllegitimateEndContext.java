@@ -8,8 +8,8 @@ public class IllegitimateEndContext extends EndContext {
         super(0, 0);
     }
 
-    public IllegitimateEndContext(int remainingTime) {
-        super(0, remainingTime);
+    public IllegitimateEndContext(int passedTime) {
+        super(0, passedTime);
     }
 
     @Override

@@ -14,7 +14,8 @@
     "common.PrimaryLevelDataMixin",
     "common.ServerLevelAccessor",
     "common.ServerLevelMixin",
-    "common.ServerPlayerAccessor"
+    "common.ServerPlayerAccessor",
+    "common.WorldEffectBuilderInvoker"
   ],
   "client": [
     "client.DeathScreenMixin",

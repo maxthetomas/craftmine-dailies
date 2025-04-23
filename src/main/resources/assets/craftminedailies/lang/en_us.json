@@ -71,5 +71,9 @@
   "craftminedailies.month.december": "December",
   "craftminedailies.calendar.title": "Daily calendar",
   "craftminedailies.calendar.back": "<",
-  "craftminedailies.calendar.next": ">"
+  "craftminedailies.calendar.next": ">",
+  "world.effect.daily_but_fast.name": "Daily But Fast",
+  "world.effect.daily_but_fast.description": "Describing this would ruin the fun...",
+  "world.effect.no_death_penalty.name": "Grave Danger",
+  "world.effect.no_death_penalty.description": "No penalty on death"
 }

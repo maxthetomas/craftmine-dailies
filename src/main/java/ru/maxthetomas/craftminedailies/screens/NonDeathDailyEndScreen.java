@@ -24,7 +24,7 @@ public class NonDeathDailyEndScreen extends Screen {
                 Component.literal(String.valueOf(this.context.getExperience()))
                         .withStyle(ChatFormatting.YELLOW));
         timeText = Component.translatable("craftminedailies.screen.end.time",
-                Component.literal(TimeFormatters.formatTimeWithoutHours(this.context.getRemainingTime() / 20))
+                Component.literal(TimeFormatters.formatTimeWithoutHours(this.context.getPassedTime() / 20))
                         .withStyle(ChatFormatting.YELLOW));
     }
 
