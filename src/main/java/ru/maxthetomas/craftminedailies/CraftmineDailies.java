@@ -50,7 +50,7 @@ public class CraftmineDailies implements ModInitializer {
     public static final String MOD_ID = "craftminedailies";
     public static final String WORLD_NAME = "_cmd_daily";
 
-    public static final int VERSION = 8;
+    public static final int VERSION = 9;
     private static String VERSION_STRING = String.valueOf(VERSION);
     public static boolean HAS_UPDATES = false;
 
