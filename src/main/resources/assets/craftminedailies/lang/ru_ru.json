@@ -44,6 +44,7 @@
   "craftminedailies.screen.end.title.time_out": "Время вышло!",
   "craftminedailies.screen.end.score": "Опыт (предметы): %s",
   "craftminedailies.screen.end.time": "Оставшееся время: %s",
+  "craftminedailies.screen.end.place": "Место в таблице лидеров: %s",
   "craftminedailies.updateAvailable": "Craftmine Dailies имеет обновление!",
   "craftminedailies.reminders.10m": "Осталось 10 минут!",
   "craftminedailies.reminders.5m": "Осталось 5 минут!",
