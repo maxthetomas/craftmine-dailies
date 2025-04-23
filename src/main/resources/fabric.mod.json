@@ -2,10 +2,15 @@
   "schemaVersion": 1,
   "id": "craftminedailies",
   "version": "${version}",
-  "name": "Dailies",
+  "name": "Craftmine Dailies",
   "description": "Adds daily runs to 25w14craftmine",
-  "authors": [],
-  "contact": {},
+  "authors": [
+    "maxthetomas"
+  ],
+  "contact": {
+    "issues": "https://github.com/maxthetomas/craftmine-dailies/issues",
+    "sources": "https://github.com/maxthetomas/craftmine-dailies"
+  },
   "license": "MIT",
   "icon": "assets/craftminedailies/icon.png",
   "environment": "*",
