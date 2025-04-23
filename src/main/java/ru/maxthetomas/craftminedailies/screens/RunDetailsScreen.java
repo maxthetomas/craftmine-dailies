@@ -1,25 +1,32 @@
 package ru.maxthetomas.craftminedailies.screens;
 
+import com.mojang.blaze3d.platform.Lighting;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.DisplayInfo;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.state.PlayerRenderState;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.players.PlayerUnlock;
 import net.minecraft.server.players.PlayerUnlocks;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.mines.WorldEffect;
 import net.minecraft.world.level.mines.WorldEffects;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.auth.RunDetails;
 import ru.maxthetomas.craftminedailies.util.GameOverlay;
@@ -29,8 +36,7 @@ import ru.maxthetomas.craftminedailies.util.TimeFormatters;
 import java.util.List;
 import java.util.Optional;
 
-import static ru.maxthetomas.craftminedailies.screens.LeaderboardScreen.getNameFromUUID;
-import static ru.maxthetomas.craftminedailies.screens.LeaderboardScreen.getOrAddCache;
+import static ru.maxthetomas.craftminedailies.screens.LeaderboardScreen.*;
 
 public class RunDetailsScreen extends Screen {
     private static final ResourceLocation CONTAINER_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/gui/container/generic_54.png");
@@ -96,11 +102,49 @@ public class RunDetailsScreen extends Screen {
             return;
         }
 
+        renderPlayerAsEntity(guiGraphics);
         renderPlayerInfo(guiGraphics);
         renderRunStats(guiGraphics);
         int y = renderUnlocks(guiGraphics);
         y = renderWorldEffects(guiGraphics, y);
         renderInventory(guiGraphics, y);
+
+        timeRenderingScreen += f;
+    }
+
+    float timeRenderingScreen = 0;
+
+    private void renderPlayerAsEntity(GuiGraphics guiGraphics) {
+        var h = 60f;
+        var vector3f = new Vec3(1, 3, 0);
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(xBase - 110, 0, 20);
+        guiGraphics.pose().scale(h, h, -h);
+        guiGraphics.pose().translate(vector3f.x, vector3f.y, vector3f.z);
+        var rotCalc = (0.0008f * (this.xMouse - (xBase - 40)));
+        guiGraphics.pose().mulPose(new Quaternionf().rotationXYZ(Mth.PI, rotCalc, 0));
+        guiGraphics.flush();
+        Lighting.setupForEntityInInventory();
+        EntityRenderDispatcher entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+        entityRenderDispatcher.setRenderShadow(false);
+
+        var playerRenderState = new PlayerRenderState();
+        playerRenderState.ageInTicks = timeRenderingScreen;
+        playerRenderState.skin = profiles.get(details.playerUuid()).skin();
+        playerRenderState.xRot = 0.03f * (this.yMouse - this.height / 4f);
+        playerRenderState.bodyRot = (float) Math.toDegrees((double) rotCalc * -0.7d);
+
+        var playerRenderer = entityRenderDispatcher.getRenderer(playerRenderState);
+
+        guiGraphics.drawSpecial(
+                mbs -> playerRenderer.render(playerRenderState, guiGraphics.pose(), mbs, 0xFFFFFF)
+        );
+
+
+        guiGraphics.flush();
+        entityRenderDispatcher.setRenderShadow(true);
+        guiGraphics.pose().popPose();
+        Lighting.setupFor3DItems();
     }
 
     private void renderPlayerInfo(GuiGraphics guiGraphics) {

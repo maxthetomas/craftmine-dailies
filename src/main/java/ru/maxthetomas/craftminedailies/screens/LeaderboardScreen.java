@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static ru.maxthetomas.craftminedailies.util.GameOverlay.drawPlayerHead;
-
 public class LeaderboardScreen extends Screen {
     public LeaderboardScreen(int startPage) {
         super(Component.translatable("craftminedailies.screen.leaderboard.title"));
@@ -93,7 +91,7 @@ public class LeaderboardScreen extends Screen {
         addRenderableWidget(btn);
     }
 
-    record ProfileData(String name, PlayerSkin skin) {
+    record ProfileData(String name, GameProfile profile, PlayerSkin skin) {
     }
 
     static HashMap<UUID, ProfileData> profiles = new HashMap<>();
@@ -115,14 +113,14 @@ public class LeaderboardScreen extends Screen {
             profiles.compute(uuid, (u, pd) -> d);
         });
 
-        new Thread(() -> {
+        CompletableFuture.runAsync(() -> {
             var profile = minecraft.getMinecraftSessionService().fetchProfile(uuid, true);
             minecraft.getSkinManager().getOrLoad(profile.profile()).whenComplete(((playerSkin, throwable) -> {
-                future.complete(new ProfileData(profile.profile().getName(), playerSkin.orElse(
+                future.complete(new ProfileData(profile.profile().getName(), profile.profile(), playerSkin.orElse(
                         minecraft.getSkinManager().getInsecureSkin(profile.profile())
                 )));
             }));
-        }).start();
+        });
 
         return minecraft.getSkinManager().getInsecureSkin(new GameProfile(uuid, ""));
     }
