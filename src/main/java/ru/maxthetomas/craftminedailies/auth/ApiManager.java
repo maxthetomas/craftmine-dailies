@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.JsonOps;
 import com.mojang.util.UndashedUuid;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -81,7 +82,9 @@ public class ApiManager {
 
     public static void submitRunStart(ApiMeta meta) {
         var reqJson = new JsonObject();
-        reqJson.add("meta", meta.toJson());
+
+        reqJson.add("meta", meta.toJson(Minecraft.getInstance()
+                .getSingleplayerServer().theGame().registryAccess()));
 
         CachedCurrentLeaderboardPage = -1;
         CachedCurrentLeaderboardPlace = -1;
@@ -110,7 +113,9 @@ public class ApiManager {
         }
 
         var reqJson = new JsonObject();
-        reqJson.add("meta", meta.toJson());
+        reqJson.add("meta", meta.toJson(Minecraft.getInstance().getSingleplayerServer()
+                .theGame().registryAccess()));
+
         reqJson.add("ctx", context.getAsJson());
         reqJson.addProperty("run_id", ongoingRunId);
 

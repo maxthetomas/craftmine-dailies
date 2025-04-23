@@ -5,7 +5,6 @@ import net.minecraft.client.gui.screens.GenericMessageScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.TheGame;
-import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -57,15 +56,13 @@ public abstract class ServerLevelMixin {
         var minecraft = Minecraft.getInstance();
         var server = serverPlayer.serverLevel().theGame().server();
 
-        server.schedule(new TickTask(server.getTickCount() + 10, () -> {
-            minecraft.schedule(() -> {
-                if (minecraft.level != null) {
-                    minecraft.level.disconnect();
-                }
+        minecraft.schedule(() -> {
+            if (minecraft.level != null) {
+                minecraft.level.disconnect();
+            }
 
-                minecraft.disconnect(new GenericMessageScreen(Component.translatable("menu.savingLevel")));
-                minecraft.setScreen(new NonDeathDailyEndScreen(ctx));
-            });
-        }));
+            minecraft.disconnect(new GenericMessageScreen(Component.translatable("menu.savingLevel")));
+            minecraft.setScreen(new NonDeathDailyEndScreen(ctx));
+        });
     }
 }

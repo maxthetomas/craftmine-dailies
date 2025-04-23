@@ -1,10 +1,12 @@
 package ru.maxthetomas.craftminedailies.auth.meta;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,7 +24,7 @@ public record InventoryMeta(List<SlotItem> itemSlots) {
 
     public record SlotItem(ItemStack stack, int slot) {
         public static MapCodec<SlotItem> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                ItemStack.CODEC.fieldOf("item").forGetter(SlotItem::stack),
+                ItemStack.SIMPLE_ITEM_CODEC.fieldOf("item").forGetter(SlotItem::stack),
                 Codec.INT.fieldOf("slot").forGetter(SlotItem::slot)
         ).apply(instance, SlotItem::new));
     }
@@ -58,9 +60,10 @@ public record InventoryMeta(List<SlotItem> itemSlots) {
         return new InventoryMeta(slotItems);
     }
 
-    public JsonElement toJson() {
-        var json = CODEC.encoder().encode(this, JsonOps.INSTANCE,
-                JsonOps.INSTANCE.emptyMap()).getOrThrow();
-        return json.getAsJsonObject().get("inventory");
+    public JsonElement toJson(HolderLookup.Provider lookup) {
+        var json = CODEC.encode(this, lookup.createSerializationContext(JsonOps.INSTANCE),
+                JsonOps.INSTANCE.mapBuilder()).build(new JsonObject());
+
+        return json.getOrThrow().getAsJsonObject().get("inventory");
     }
 }

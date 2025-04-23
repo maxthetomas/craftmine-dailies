@@ -6,6 +6,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.server.level.ServerLevel;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.mixin.common.ServerPlayerAccessor;
@@ -56,7 +57,7 @@ public record ApiMeta(
         );
     }
 
-    public JsonObject toJson() {
+    public JsonObject toJson(HolderLookup.Provider lookup) {
         var obj = new JsonObject();
 
         obj.addProperty("world_seed", worldSeed());
@@ -65,7 +66,7 @@ public record ApiMeta(
         obj.addProperty("player_uuid", playerUUID().toString());
         obj.addProperty("mod_version", CraftmineDailies.VERSION);
         obj.addProperty("mod_version_string", CraftmineDailies.getStringVersion());
-        obj.add("inventory", inventoryMeta.toJson());
+        obj.add("inventory", inventoryMeta.toJson(lookup));
 
         var effects = new JsonArray();
         this.effects().forEach(effects::add);
