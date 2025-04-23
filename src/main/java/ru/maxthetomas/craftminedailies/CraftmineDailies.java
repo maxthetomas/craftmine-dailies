@@ -32,6 +32,7 @@ import ru.maxthetomas.craftminedailies.auth.meta.InventoryMeta;
 import ru.maxthetomas.craftminedailies.mixin.common.LivingEntityInvoker;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
 import ru.maxthetomas.craftminedailies.screens.NonDeathDailyEndScreen;
+import ru.maxthetomas.craftminedailies.util.DefaultDataPackLoader;
 import ru.maxthetomas.craftminedailies.util.EndContext;
 import ru.maxthetomas.craftminedailies.util.GameOverlay;
 import ru.maxthetomas.craftminedailies.util.WorldCreationUtil;
@@ -240,6 +241,7 @@ public class CraftmineDailies implements ModInitializer {
 
     public static void openLeaderboard(int startPage) {
         Minecraft.getInstance().setScreen(new LeaderboardScreen(startPage));
+        DefaultDataPackLoader.tryLoadAsync();
         fetchToday();
     }
 

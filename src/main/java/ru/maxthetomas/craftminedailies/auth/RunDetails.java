@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.mines.WorldEffect;
 import ru.maxthetomas.craftminedailies.auth.meta.InventoryMeta;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
+import ru.maxthetomas.craftminedailies.util.DefaultDataPackLoader;
 
 import java.time.Instant;
 import java.util.List;
@@ -66,7 +67,11 @@ public record RunDetails(UUID playerUuid, String playerOfflineName, LeaderboardS
     }
 
     public static RunDetails fromJson(JsonObject object) {
-        return CODEC.decoder().decode(JsonOps.INSTANCE, object).getOrThrow().getFirst();
+        return CODEC.decoder().decode(
+                DefaultDataPackLoader.getRegistriesOrBlock().compositeAccess()
+                        .createSerializationContext(JsonOps.INSTANCE),
+
+                object).getOrThrow().getFirst();
     }
 
 

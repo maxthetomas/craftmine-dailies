@@ -14,6 +14,7 @@ import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.players.PlayerUnlock;
 import net.minecraft.world.level.mines.WorldEffect;
 import org.jetbrains.annotations.Nullable;
@@ -83,6 +84,8 @@ public class ApiManager {
     public static void submitRunStart(ApiMeta meta) {
         var reqJson = new JsonObject();
 
+        RegistryLayer.createRegistryAccess().getAccessFrom(RegistryLayer.STATIC);
+
         reqJson.add("meta", meta.toJson(Minecraft.getInstance()
                 .getSingleplayerServer().theGame().registryAccess()));
 
@@ -144,7 +147,6 @@ public class ApiManager {
     }
 
     public static CompletableFuture<LeaderboardFetch> fetchLeaderboardPage(int page, @Nullable String apiDay) {
-
         var future = new CompletableFuture<LeaderboardFetch>();
 
         try {
@@ -192,7 +194,6 @@ public class ApiManager {
 
         return future;
     }
-
 
     public static CompletableFuture<RunDetails> fetchRunDetails(int runId) {
         var future = new CompletableFuture<RunDetails>();
