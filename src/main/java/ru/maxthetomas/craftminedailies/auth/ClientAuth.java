@@ -24,7 +24,7 @@ public class ClientAuth {
     private static URI BASE_API;
     private static String apiAccessToken;
 
-    public static void create() {
+    public static void createApiPath() {
         BASE_API = URI.create(createApiUrl()).normalize();
     }
 

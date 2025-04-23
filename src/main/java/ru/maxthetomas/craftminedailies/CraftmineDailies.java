@@ -96,8 +96,8 @@ public class CraftmineDailies implements ModInitializer {
                 .get().getMetadata().getVersion().getFriendlyString();
 
 
+        ClientAuth.createApiPath();
         checkForUpdates();
-        ClientAuth.create();
         restoreLastPlayedSeed();
         fetchToday();
 
