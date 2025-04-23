@@ -24,7 +24,7 @@ public record InventoryMeta(List<SlotItem> itemSlots) {
 
     public record SlotItem(ItemStack stack, int slot) {
         public static MapCodec<SlotItem> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                ItemStack.SIMPLE_ITEM_CODEC.fieldOf("item").forGetter(SlotItem::stack),
+                ItemStack.CODEC.fieldOf("item").forGetter(SlotItem::stack),
                 Codec.INT.fieldOf("slot").forGetter(SlotItem::slot)
         ).apply(instance, SlotItem::new));
     }
