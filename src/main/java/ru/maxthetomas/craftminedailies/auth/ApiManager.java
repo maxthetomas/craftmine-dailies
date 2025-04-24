@@ -223,7 +223,7 @@ public class ApiManager {
         return future;
     }
 
-    public record ServerVersions(int serverVersion, int clientVersion) {
+    public record ServerVersions(int serverVersion, int clientVersion, String clientVersionString) {
     }
 
     public static CompletableFuture<ServerVersions> fetchServerVersions() {
@@ -246,8 +246,9 @@ public class ApiManager {
 
                 var srv = json.get("server").getAsInt();
                 var cli = json.get("client").getAsInt();
+                var vId = json.get("version_id").getAsString();
 
-                future.complete(new ServerVersions(srv, cli));
+                future.complete(new ServerVersions(srv, cli, vId));
             });
         } catch (Exception error) {
             LOGGER.error("Could not get leaderboard data!", error);

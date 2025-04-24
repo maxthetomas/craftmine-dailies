@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
+import net.minecraft.SharedConstants;
 import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.GenericMessageScreen;
@@ -43,6 +44,7 @@ public class CraftmineDailies implements ModInitializer {
 
     public static final int VERSION = 11;
     private static String VERSION_STRING = String.valueOf(VERSION);
+    public static String LATEST_VERSION_STRING = "";
     public static boolean HAS_UPDATES = false;
 
     private static Path lastDailySeedPath;
@@ -80,6 +82,10 @@ public class CraftmineDailies implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            SharedConstants.IS_RUNNING_IN_IDE = true;
+        }
+
         lastDailySeedPath = Path.of(FabricLoader.getInstance().getConfigDir().toString() + "/", ".cd_last_played_seed");
 
         // Load this mod by mod's ID
@@ -358,6 +364,9 @@ public class CraftmineDailies implements ModInitializer {
         ApiManager.fetchServerVersions().whenComplete((ver, thr) -> {
             if (thr != null) return;
             HAS_UPDATES = ver.clientVersion() > VERSION;
+            LATEST_VERSION_STRING = ver.clientVersionString();
+
+            AutoUpdater.downloadAndInstallUpdate();
         });
     }
 
