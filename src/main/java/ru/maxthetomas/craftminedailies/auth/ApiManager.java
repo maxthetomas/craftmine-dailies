@@ -309,7 +309,8 @@ public class ApiManager {
     }
 
     public record DailyDetails(int xp, int mineCrafterLevel, long seed,
-                               List<String> effects, List<String> unlockedEffects, List<String> playerUnlocks) {
+                               List<String> effects, List<String> unlockedEffects, List<String> playerUnlocks,
+                               boolean isSpecial, JsonElement extraData) {
         public List<WorldEffect> getEffects() {
             return effects.stream().map(v -> BuiltInRegistries.WORLD_EFFECT
                     .get(ResourceLocation.parse(v)).get().value()).toList();
@@ -324,6 +325,13 @@ public class ApiManager {
             return playerUnlocks().stream().map(v -> BuiltInRegistries.PLAYER_UNLOCK.get(ResourceLocation.parse(v)).get()).toList();
         }
 
+        public JsonObject getDataOrEmpty() {
+            if (extraData != null && extraData.isJsonObject())
+                return extraData.getAsJsonObject();
+
+            return new JsonObject();
+        }
+
         public static DailyDetails fromJson(JsonObject object) {
             var seed = Long.parseLong(object.get("seed").getAsString());
             var crafterLevel = object.get("mine_crafter_level").getAsInt();
@@ -332,12 +340,15 @@ public class ApiManager {
             var effects = object.getAsJsonArray("effects");
             var unlocked = object.getAsJsonArray("unlocked_effects");
             var playerUnlocks = object.getAsJsonArray("player_unlocks");
+            var isSpecial = object.has("special") && object.get("special").getAsBoolean();
+            var extraData = object.has("data") ? object.get("data") : null;
 
             return new DailyDetails(
                     xp, crafterLevel, seed,
                     effects.asList().stream().map(JsonElement::getAsString).toList(),
                     unlocked.asList().stream().map(JsonElement::getAsString).toList(),
-                    playerUnlocks.asList().stream().map(JsonElement::getAsString).toList()
+                    playerUnlocks.asList().stream().map(JsonElement::getAsString).toList(),
+                    isSpecial, extraData
             );
         }
     }

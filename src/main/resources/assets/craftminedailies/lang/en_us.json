@@ -10,6 +10,7 @@
   "craftminedailies.publish": "Daily runs cannot be published!",
   "craftminedailies.publish.button": "Not in daily",
   "craftminedailies.item.base": "Daily Mine base",
+  "craftminedailies.item.special": "Special Daily Mine",
   "craftminedailies.item.mine": "Daily Mine",
   "craftminedailies.death.score": "Experience (items): %s",
   "craftminedailies.death.time": "Remaining time: %s",

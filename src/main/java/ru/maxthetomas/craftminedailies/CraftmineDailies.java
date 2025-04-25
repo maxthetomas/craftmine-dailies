@@ -153,7 +153,6 @@ public class CraftmineDailies implements ModInitializer {
             // Reset variables
             ENDED = true;
             GAME_TIME_AT_START = -1;
-            REMAINING_TIME_CACHE = -1;
         });
 
         ServerTickEvents.END_WORLD_TICK.register(s -> {
@@ -272,7 +271,6 @@ public class CraftmineDailies implements ModInitializer {
         // Reset
         ENDED = true;
         GAME_TIME_AT_START = -1;
-        REMAINING_TIME_CACHE = -1;
     }
 
     public static int getRemainingTime(ServerLevel mineLevel) {

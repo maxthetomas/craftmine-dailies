@@ -68,7 +68,7 @@ public abstract class DeathScreenMixin extends Screen {
                 Component.literal(String.valueOf(CraftmineDailies.LAST_DEATH_CONTEXT.getExperience()))
                         .withStyle(ChatFormatting.YELLOW));
         this.timeText = Component.translatable("craftminedailies.death.time",
-                Component.literal(TimeFormatters.formatTimeWithoutHours(CraftmineDailies.LAST_DEATH_CONTEXT.getPassedTime() / 20))
+                Component.literal(TimeFormatters.formatTimeWithoutHours(CraftmineDailies.REMAINING_TIME_CACHE / 20))
                         .withStyle(ChatFormatting.YELLOW));
     }
 
