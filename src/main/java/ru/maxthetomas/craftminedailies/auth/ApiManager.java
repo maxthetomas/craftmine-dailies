@@ -30,6 +30,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /*
@@ -318,7 +319,8 @@ public class ApiManager {
 
         public List<WorldEffect> getUnlockedEffects() {
             return unlockedEffects.stream().map(v -> BuiltInRegistries.WORLD_EFFECT
-                    .get(ResourceLocation.parse(v)).get().value()).toList();
+                            .get(ResourceLocation.parse(v)).orElse(null))
+                    .filter(Objects::nonNull).map(Holder.Reference::value).toList();
         }
 
         public List<Holder.Reference<PlayerUnlock>> getForcedPlayerUnlocks() {

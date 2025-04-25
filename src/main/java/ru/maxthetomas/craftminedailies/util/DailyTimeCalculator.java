@@ -16,8 +16,7 @@ public class DailyTimeCalculator {
         if (!CraftmineDailies.EXPERIMENTAL || !player.serverLevel().isMine())
             return CraftmineDailies.DEFAULT_MAX_GAME_TIME;
 
-        var time = CraftmineDailies.DEFAULT_MAX_GAME_TIME;
-        return time;
+        return CraftmineDailies.DEFAULT_MAX_GAME_TIME;
     }
 
     private static float scalingFactor = 1.0f;
@@ -34,20 +33,6 @@ public class DailyTimeCalculator {
         // Don't allow to go over actual time limit
         return Math.min(previousTime - scalingFactor,
                 getDailyEndTime(player) - getActualPassedTime(player, startTime));
-    }
-
-
-    public static Component getTimeText() {
-        var text = Component.literal(formatTimeWithoutHours(CraftmineDailies.REMAINING_TIME_CACHE / 20));
-
-        if (scalingFactor != 1f) {
-            text = text.append(" ").append(
-                    Component.literal(String.format("x%.1f", scalingFactor))
-                            .withColor(getColorForScalingFactor(scalingFactor))
-            );
-        }
-
-        return text;
     }
 
     private static int lerpColor(int from, int to, float f) {
@@ -76,5 +61,21 @@ public class DailyTimeCalculator {
 
         if (player.serverLevel().isActive(DailyWorldEffects.XP_ADDICTION))
             scalingHandler = new ExperienceAddictionScalingFactor(player);
+    }
+
+    public static float getCurrentTimeScale() {
+        return scalingFactor;
+    }
+
+    public static Component getTimeText() {
+        return Component.literal(formatTimeWithoutHours(CraftmineDailies.REMAINING_TIME_CACHE / 20));
+    }
+
+    public static Component getTimeScaleText() {
+        if (scalingHandler == null)
+            return Component.empty();
+
+        return Component.literal(String.format("x%.1f", scalingFactor))
+                .withColor(getColorForScalingFactor(scalingFactor));
     }
 }

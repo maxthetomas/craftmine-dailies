@@ -81,7 +81,7 @@
   "world.effect.all_in.name": "All In",
   "world.effect.all_in.description": "Have some advice: Don't die!",
   "world.effect.xp_addiction.name": "XP Addiction",
-  "world.effect.xp_addiction.description": "TODO",
+  "world.effect.xp_addiction.description": "I NEED those orbs! (Player's XP is counted in scoring)",
   "world.effect.strong_spirit.name": "Strong Spirit",
   "world.effect.strong_spirit.description": "Death is temporary, XP is forever",
   "world.effect.used_strong_spirit.name": "Strong Spirit (used)",
