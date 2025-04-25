@@ -7,6 +7,7 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.mixin.common.ServerPlayerAccessor;
@@ -29,7 +30,7 @@ public record ApiMeta(
         List<String> worldEffects = List.of();
         if (level.isPresent()) {
             worldEffects = level.get().getActiveEffects().stream()
-                    .map(v -> "minecraft:" + v.key()).toList();
+                    .map(v -> BuiltInRegistries.WORLD_EFFECT.getResourceKey(v).toString()).toList();
         }
 
         UUID playerId = Util.NIL_UUID;

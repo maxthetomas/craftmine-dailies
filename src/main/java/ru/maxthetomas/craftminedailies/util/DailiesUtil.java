@@ -36,7 +36,7 @@ public class DailiesUtil {
         if (CraftmineDailies.EXPERIMENTAL &&
                 !shouldIgnore(ignoreSelfPlacedWorldEffects, DailyWorldEffects.XP_ADDICTION) &&
                 level.isActive(DailyWorldEffects.XP_ADDICTION)) {
-            totalXp += player.getTotalExperienceBasedOnLevels();
+            totalXp += player.getTotalExperienceBasedOnLevels() / 20f;
         }
 
         multiplier *= player.getAttributeValue(Attributes.EXPERIENCE_GAIN_MODIFIER);

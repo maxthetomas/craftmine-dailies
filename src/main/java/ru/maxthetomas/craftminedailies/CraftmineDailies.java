@@ -139,13 +139,23 @@ public class CraftmineDailies implements ModInitializer {
                 var effects = ((ServerLevelAccessor) player.serverLevel()).getActiveEffects();
                 effects.remove(DailyWorldEffects.STRONG_SPIRIT);
                 effects.add(DailyWorldEffects.USED_STRONG_SPIRIT);
+                player.sendSystemMessage(Component.translatable("craftminedailies.strong_spirit.saved"));
+                player.setHealth(1f);
+                return false;
             }
 
 
             var inventoryMeta = InventoryMeta.createForPlayer(player);
 
             var hasPenalty = DailyWorldEffects.shouldApplyDeathPenalty(player.serverLevel());
-            var experience = DailiesUtil.getPlayerInventoryValue(player, player.serverLevel(), hasPenalty, hasPenalty ? 0.5f : 1f);
+            var xpScaler = 1f;
+            if (hasPenalty) xpScaler *= 0.5f;
+
+            if (EXPERIMENTAL && player.serverLevel().isActive(DailyWorldEffects.ALL_IN))
+                xpScaler = 0f;
+
+            var experience = DailiesUtil.getPlayerInventoryValue(player, player.serverLevel(),
+                    hasPenalty, xpScaler);
             var ctx = new DeathEndContext(experience, DailyTimeCalculator.getActualPassedTime(player, (int) GAME_TIME_AT_START), player, damageSource);
 
             dailyEnded(ctx, inventoryMeta);
@@ -198,8 +208,13 @@ public class CraftmineDailies implements ModInitializer {
             if (remainingTime <= 0) {
                 var player = Minecraft.getInstance().getSingleplayerServer().theGame().playerList().getPlayers().getFirst();
                 var inventoryMeta = InventoryMeta.createForPlayer(player);
-                var context = new TimeOutContext(DailiesUtil.getPlayerInventoryValue(player, player.serverLevel(),
-                        true, 0.5), DailyTimeCalculator.getActualPassedTime(player, (int) GAME_TIME_AT_START));
+
+                var inventoryPrice = 0.5f;
+                if (EXPERIMENTAL && player.serverLevel().isActive(DailyWorldEffects.ALL_IN))
+                    inventoryPrice = 0f;
+
+                var inventoryValue = DailiesUtil.getPlayerInventoryValue(player, player.serverLevel(), true, inventoryPrice);
+                var context = new TimeOutContext(inventoryValue, DailyTimeCalculator.getActualPassedTime(player, (int) GAME_TIME_AT_START));
 
                 dailyEnded(context, inventoryMeta);
 

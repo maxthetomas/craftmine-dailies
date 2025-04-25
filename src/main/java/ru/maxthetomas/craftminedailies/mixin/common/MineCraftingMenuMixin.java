@@ -2,22 +2,26 @@ package ru.maxthetomas.craftminedailies.mixin.common;
 
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MineCraftingMenu;
 import net.minecraft.world.inventory.MineCraftingResultSlot;
 import net.minecraft.world.inventory.MineCraftingSlot;
 import net.minecraft.world.item.component.ItemLore;
+import net.minecraft.world.level.mines.WorldEffect;
 import net.minecraft.world.level.mines.WorldEffects;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
 
+import java.util.Collections;
 import java.util.List;
 
 @Mixin(MineCraftingMenu.class)
@@ -100,6 +104,14 @@ public abstract class MineCraftingMenuMixin {
         }
 
         this.nrOfRandomSlots = 1;
+    }
 
+    @Redirect(at = @At(value = "INVOKE", target = "Ljava/util/Collections;shuffle(Ljava/util/List;)V"), method = "addLockedEffectHintBox")
+    public void removeDailyStuffFromHints(List<WorldEffect> list) {
+        Collections.shuffle(list);
+        if (!CraftmineDailies.isInDaily()) return;
+
+        list.removeIf(v -> BuiltInRegistries.WORLD_EFFECT.getResourceKey(v).get().location()
+                .getNamespace().equals(CraftmineDailies.MOD_ID));
     }
 }

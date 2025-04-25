@@ -75,8 +75,15 @@
   "craftminedailies.calendar.title": "Daily calendar",
   "craftminedailies.calendar.back": "<",
   "craftminedailies.calendar.next": ">",
-  "world.effect.daily_but_fast.name": "Daily But Fast",
-  "world.effect.daily_but_fast.description": "Describing this would ruin the fun...",
+  "craftminedailies.strong_spirit.saved": "Strong Spirit saved you!",
   "world.effect.no_death_penalty.name": "Grave Danger",
-  "world.effect.no_death_penalty.description": "No penalty on death"
+  "world.effect.no_death_penalty.description": "No penalty on death",
+  "world.effect.all_in.name": "All In",
+  "world.effect.all_in.description": "Have some advice: Don't die!",
+  "world.effect.xp_addiction.name": "XP Addiction",
+  "world.effect.xp_addiction.description": "TODO",
+  "world.effect.strong_spirit.name": "Strong Spirit",
+  "world.effect.strong_spirit.description": "Death is temporary, XP is forever",
+  "world.effect.used_strong_spirit.name": "Strong Spirit (used)",
+  "world.effect.used_strong_spirit.description": "Not so temporary anymore..."
 }

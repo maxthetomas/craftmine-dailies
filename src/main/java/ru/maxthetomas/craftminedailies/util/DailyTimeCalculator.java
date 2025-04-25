@@ -4,6 +4,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
+import ru.maxthetomas.craftminedailies.content.DailyWorldEffects;
+import ru.maxthetomas.craftminedailies.util.scalers.ExperienceAddictionScalingFactor;
 import ru.maxthetomas.craftminedailies.util.scalers.ITimeScalingFactor;
 
 import static ru.maxthetomas.craftminedailies.util.TimeFormatters.formatTimeWithoutHours;
@@ -71,5 +73,8 @@ public class DailyTimeCalculator {
             return;
 
         scalingHandler = null;
+
+        if (player.serverLevel().isActive(DailyWorldEffects.XP_ADDICTION))
+            scalingHandler = new ExperienceAddictionScalingFactor(player);
     }
 }
