@@ -44,7 +44,7 @@ public class CraftmineDailies implements ModInitializer {
     // Enables registration and use of experimental daily world components
     public static final boolean EXPERIMENTAL = false;
 
-    public static final int VERSION = 11;
+    public static final int VERSION = 12;
     private static String VERSION_STRING = String.valueOf(VERSION);
     public static boolean HAS_UPDATES = false;
 
