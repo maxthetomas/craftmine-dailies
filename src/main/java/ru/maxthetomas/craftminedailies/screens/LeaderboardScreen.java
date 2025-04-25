@@ -81,12 +81,12 @@ public class LeaderboardScreen extends Screen {
                         Component.translatable("craftminedailies.button.discord"),
                         ConfirmLinkScreen.confirmLink(this, CraftmineDailies.DISCORD_URL), true)
                 .sprite(ResourceLocation.fromNamespaceAndPath(CraftmineDailies.MOD_ID, "icon/discord"),
-                        15, 15)
+                        14, 14)
                 .width(20)
                 .tooltip(Tooltip.create(Component.translatable("craftminedailies.button.discord")))
                 .build();
 
-        btn.setRectangle(20, 20, 10 + 22, this.height - 30 - 20 - 2);
+        btn.setRectangle(20, 20, this.width - 50 - 2, this.height - 30);
 
         addRenderableWidget(btn);
     }
@@ -103,7 +103,8 @@ public class LeaderboardScreen extends Screen {
                 .tooltip(Tooltip.create(Component.translatable("craftminedailies.button.history")))
                 .build();
 
-        btn.setRectangle(20, 20, 10, this.height - 30 - 20 - 2);
+        btn.setRectangle(20, 20, this.width - 30, this.height - 30);
+
 
         addRenderableWidget(btn);
     }
@@ -255,7 +256,7 @@ public class LeaderboardScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double d, double e, int i) {
-        if (i == 0) {
+        if (i == 0 && results != null) {
             var currentRun = getCurrentlySelectedRun((int) d, (int) e);
             if (currentRun != -1 && currentRun < results.size()) {
                 var runId = results.get(currentRun).runId;
