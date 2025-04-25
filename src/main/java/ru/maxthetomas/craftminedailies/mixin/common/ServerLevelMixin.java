@@ -22,6 +22,7 @@ import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.auth.meta.InventoryMeta;
 import ru.maxthetomas.craftminedailies.screens.NonDeathDailyEndScreen;
 import ru.maxthetomas.craftminedailies.util.DailiesUtil;
+import ru.maxthetomas.craftminedailies.util.DailyTimeCalculator;
 import ru.maxthetomas.craftminedailies.util.ends.WinEndContext;
 
 @Mixin(ServerLevel.class)
@@ -55,7 +56,7 @@ public abstract class ServerLevelMixin {
         var inventoryMeta = InventoryMeta.createForPlayer(serverPlayer);
         var ctx = new WinEndContext(
                 DailiesUtil.getPlayerInventoryValue(serverPlayer, (ServerLevel) (Object) this, false, 1.0),
-                CraftmineDailies.getPassedTime((ServerLevel) (Object) this)
+                DailyTimeCalculator.getActualPassedTime(serverPlayer, CraftmineDailies.getTimeAtStart())
         );
         CraftmineDailies.dailyEnded(ctx, inventoryMeta);
 
@@ -70,4 +71,5 @@ public abstract class ServerLevelMixin {
             minecraft.setScreen(new NonDeathDailyEndScreen(ctx));
         });
     }
+
 }

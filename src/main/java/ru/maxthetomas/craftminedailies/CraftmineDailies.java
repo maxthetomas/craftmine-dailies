@@ -15,12 +15,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerUnlock;
+import net.minecraft.util.Mth;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.auth.ClientAuth;
 import ru.maxthetomas.craftminedailies.auth.meta.ApiMeta;
 import ru.maxthetomas.craftminedailies.auth.meta.InventoryMeta;
 import ru.maxthetomas.craftminedailies.content.DailyWorldEffects;
 import ru.maxthetomas.craftminedailies.mixin.common.LivingEntityInvoker;
+import ru.maxthetomas.craftminedailies.mixin.common.ServerLevelAccessor;
 import ru.maxthetomas.craftminedailies.screens.LeaderboardScreen;
 import ru.maxthetomas.craftminedailies.screens.NonDeathDailyEndScreen;
 import ru.maxthetomas.craftminedailies.util.*;
@@ -68,6 +70,7 @@ public class CraftmineDailies implements ModInitializer {
     public static final Component REMINDER_TIME_1M = Component.translatable("craftminedailies.reminders.1m");
 
     public static long REMAINING_TIME_CACHE = -1;
+    private static float previousRemainingTime = -1;
 
     public static DeathEndContext LAST_DEATH_CONTEXT = null;
 
@@ -131,11 +134,19 @@ public class CraftmineDailies implements ModInitializer {
             if (((LivingEntityInvoker) entity).callCheckTotemDeathProtection(damageSource))
                 return true;
 
+            if (EXPERIMENTAL
+                    && player.serverLevel().isActive(DailyWorldEffects.STRONG_SPIRIT)) {
+                var effects = ((ServerLevelAccessor) player.serverLevel()).getActiveEffects();
+                effects.remove(DailyWorldEffects.STRONG_SPIRIT);
+                effects.add(DailyWorldEffects.USED_STRONG_SPIRIT);
+            }
+
+
             var inventoryMeta = InventoryMeta.createForPlayer(player);
 
             var hasPenalty = DailyWorldEffects.shouldApplyDeathPenalty(player.serverLevel());
             var experience = DailiesUtil.getPlayerInventoryValue(player, player.serverLevel(), hasPenalty, hasPenalty ? 0.5f : 1f);
-            var ctx = new DeathEndContext(experience, CraftmineDailies.getPassedTime(player.serverLevel()), player, damageSource);
+            var ctx = new DeathEndContext(experience, DailyTimeCalculator.getActualPassedTime(player, (int) GAME_TIME_AT_START), player, damageSource);
 
             dailyEnded(ctx, inventoryMeta);
 
@@ -147,7 +158,7 @@ public class CraftmineDailies implements ModInitializer {
         ServerPlayConnectionEvents.DISCONNECT.register((player, server) -> {
             if (isInDaily() && GAME_TIME_AT_START != -1) {
                 var inv = InventoryMeta.createForPlayer(player.getPlayer());
-                dailyEnded(new IllegitimateEndContext(getPassedTime(player.getPlayer().serverLevel())), inv);
+                dailyEnded(new IllegitimateEndContext(DailyTimeCalculator.getActualPassedTime(player.getPlayer(), (int) GAME_TIME_AT_START)), inv);
             }
 
             // Reset variables
@@ -175,7 +186,9 @@ public class CraftmineDailies implements ModInitializer {
                 CACHED_CURRENT_INV_EXP = DailiesUtil.getPlayerInventoryValue(player, player.serverLevel(), false, 1.0);
             }
 
-            var remainingTime = getRemainingTime(s);
+
+            previousRemainingTime = DailyTimeCalculator.getRemainingTime(s.players().getFirst(), previousRemainingTime, (int) GAME_TIME_AT_START);
+            var remainingTime = Mth.floor(previousRemainingTime);
 
             if (remainingTime == 20 * 60 * 10)
                 s.theGame().playerList().broadcastSystemMessage(REMINDER_TIME_10M, false);
@@ -183,10 +196,11 @@ public class CraftmineDailies implements ModInitializer {
             if (remainingTime == 20 * 60) s.theGame().playerList().broadcastSystemMessage(REMINDER_TIME_1M, false);
 
             if (remainingTime <= 0) {
-                var player = Minecraft.getInstance().getSingleplayerServer().theGame().playerList().getPlayers().get(0);
+                var player = Minecraft.getInstance().getSingleplayerServer().theGame().playerList().getPlayers().getFirst();
                 var inventoryMeta = InventoryMeta.createForPlayer(player);
                 var context = new TimeOutContext(DailiesUtil.getPlayerInventoryValue(player, player.serverLevel(),
-                        true, 0.5), getPassedTime(player.serverLevel()));
+                        true, 0.5), DailyTimeCalculator.getActualPassedTime(player, (int) GAME_TIME_AT_START));
+
                 dailyEnded(context, inventoryMeta);
 
                 var minecraft = Minecraft.getInstance();
@@ -252,7 +266,7 @@ public class CraftmineDailies implements ModInitializer {
         if (Minecraft.getInstance().getSingleplayerServer().theGame().playerList().getPlayers().isEmpty())
             return;
 
-
+        previousRemainingTime = -1;
         GAME_TIME_AT_START = gameTime;
 
         lastPlayedSeed = Minecraft.getInstance().getSingleplayerServer().theGame()
@@ -271,18 +285,16 @@ public class CraftmineDailies implements ModInitializer {
         // Reset
         ENDED = true;
         GAME_TIME_AT_START = -1;
+        previousRemainingTime = -1;
     }
 
-    public static int getRemainingTime(ServerLevel mineLevel) {
-        return (int) (DailyWorldEffects.getDailyEndTime(mineLevel) - getPassedTime(mineLevel));
-    }
-
-    public static int getPassedTime(ServerLevel mineLevel) {
-        return (int) (mineLevel.getGameTime() - GAME_TIME_AT_START);
+    public static int getTimeAtStart() {
+        return (int) GAME_TIME_AT_START;
     }
 
     public static boolean shouldRenderInGameTimer() {
         if (GAME_TIME_AT_START == -1) return false;
+        if (previousRemainingTime == -1) return false;
         if (ENDED) return false;
 
         return true;

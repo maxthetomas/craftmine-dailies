@@ -1,6 +1,7 @@
 package ru.maxthetomas.craftminedailies.util;
 
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
@@ -10,6 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.mines.WorldEffect;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
+import ru.maxthetomas.craftminedailies.content.DailyWorldEffects;
 
 public class DailiesUtil {
     public static int getPlayerInventoryValue(ServerPlayer player, ServerLevel level, boolean ignoreSelfPlacedWorldEffects, double extraScale) {
@@ -24,18 +26,32 @@ public class DailiesUtil {
         }
 
         double multiplier = 1.0F;
-        var todayEffects = ApiManager.TodayDetails.getEffects();
         for (WorldEffect effect : level.getActiveEffects()) {
-            if (ignoreSelfPlacedWorldEffects) {
-                // Check that the effect is not forced
-                if (!todayEffects.contains(effect))
-                    continue;
-            }
+            if (shouldIgnore(ignoreSelfPlacedWorldEffects, effect))
+                continue;
 
             multiplier *= effect.experienceModifier();
         }
 
+        if (CraftmineDailies.EXPERIMENTAL &&
+                !shouldIgnore(ignoreSelfPlacedWorldEffects, DailyWorldEffects.XP_ADDICTION) &&
+                level.isActive(DailyWorldEffects.XP_ADDICTION)) {
+            totalXp += player.getTotalExperienceBasedOnLevels();
+        }
+
         multiplier *= player.getAttributeValue(Attributes.EXPERIENCE_GAIN_MODIFIER);
         return (int) (totalXp * multiplier * extraScale * CraftmineDailies.XP_MULT);
+    }
+
+    public static boolean shouldIgnore(boolean shouldIgnoreSelfPlaced, WorldEffect effect) {
+        return isSelfPlaced(effect) && shouldIgnoreSelfPlaced;
+    }
+
+    public static boolean isSelfPlaced(WorldEffect effect) {
+        return !ApiManager.TodayDetails.getEffects().contains(effect);
+    }
+
+    public static Component getInventoryValueText() {
+        return Component.translatable("craftminedailies.hud.xp", CraftmineDailies.CACHED_CURRENT_INV_EXP);
     }
 }
