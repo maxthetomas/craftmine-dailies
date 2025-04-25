@@ -34,7 +34,8 @@ public class DailyWorldEffects {
 
     private static WorldEffect register(WorldEffect.Builder builder, String itemModel) {
         var builderAccessor = ((WorldEffectBuilderInvoker) builder);
-        builderAccessor.setItemModel(ResourceLocation.fromNamespaceAndPath(CraftmineDailies.MOD_ID, itemModel));
+        if (itemModel != null)
+            builderAccessor.setItemModel(ResourceLocation.fromNamespaceAndPath(CraftmineDailies.MOD_ID, itemModel));
         var effect = builderAccessor.callBuild();
 
         if (!CraftmineDailies.EXPERIMENTAL)
