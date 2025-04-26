@@ -275,6 +275,7 @@ public class ApiManager {
             jsonResp = JsonParser.parseString(response.body()).getAsJsonObject();
         } catch (Exception e) {
             LOGGER.error("Could not parse response JSON", e);
+            CraftmineDailies.showErrorMessage(Component.translatable("craftminedailies.errors.general_networking"), false);
         }
 
         var code = response.statusCode();
