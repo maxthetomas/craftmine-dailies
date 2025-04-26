@@ -13,6 +13,7 @@ import ru.maxthetomas.craftminedailies.CraftmineDailies;
 import ru.maxthetomas.craftminedailies.mixin.common.ServerPlayerAccessor;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 // Extra metadata to be stored
@@ -30,7 +31,9 @@ public record ApiMeta(
         List<String> worldEffects = List.of();
         if (level.isPresent()) {
             worldEffects = level.get().getActiveEffects().stream()
-                    .map(v -> BuiltInRegistries.WORLD_EFFECT.getResourceKey(v).toString()).toList();
+                    .map(v -> BuiltInRegistries.WORLD_EFFECT
+                            .getResourceKey(v).orElse(null))
+                    .filter(Objects::nonNull).map(v -> v.location().toString()).toList();
         }
 
         UUID playerId = Util.NIL_UUID;
