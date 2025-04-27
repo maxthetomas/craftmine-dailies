@@ -137,7 +137,7 @@ public class RunDetailsScreen extends Screen {
         var playerRenderer = entityRenderDispatcher.getRenderer(playerRenderState);
 
         guiGraphics.drawSpecial(
-                mbs -> playerRenderer.render(playerRenderState, guiGraphics.pose(), mbs, 0xFFFFFF)
+                mbs -> playerRenderer.render(playerRenderState, guiGraphics.pose(), mbs, 0xFFFFFFFF)
         );
 
 

@@ -16,6 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerUnlock;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.component.DeathProtection;
 import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.auth.ClientAuth;
 import ru.maxthetomas.craftminedailies.auth.meta.ApiMeta;
@@ -58,6 +59,8 @@ public class CraftmineDailies implements ModInitializer {
     public static final long DEFAULT_MAX_GAME_TIME = 20 * 60 * 30;
     protected static long GAME_TIME_AT_START = -1;
 
+    public static List<Component> END_TEXT;
+
     public static final float XP_MULT = 100;
 
     public static final Component BUTTON_TEXT_OK = Component.translatable("craftminedailies.button.start.active");
@@ -71,8 +74,6 @@ public class CraftmineDailies implements ModInitializer {
 
     public static long REMAINING_TIME_CACHE = -1;
     private static float previousRemainingTime = -1;
-
-    public static DeathEndContext LAST_DEATH_CONTEXT = null;
 
     // If run has ended for any reason.
     protected static boolean ENDED = false;
@@ -91,7 +92,6 @@ public class CraftmineDailies implements ModInitializer {
         // Load this mod by mod's ID
         VERSION_STRING = FabricLoader.getInstance().getModContainer(MOD_ID)
                 .get().getMetadata().getVersion().getFriendlyString();
-
 
         DailyWorldEffects.bootstrap();
 
@@ -136,11 +136,14 @@ public class CraftmineDailies implements ModInitializer {
 
             if (EXPERIMENTAL
                     && player.serverLevel().isActive(DailyWorldEffects.STRONG_SPIRIT)) {
+                var deathProtection = DeathProtection.TOTEM_OF_UNDYING;
+                player.sendSystemMessage(Component.translatable("craftminedailies.strong_spirit.saved"));
+                player.setHealth(1f);
+                deathProtection.applyEffects(null, player);
+
                 var effects = ((ServerLevelAccessor) player.serverLevel()).getActiveEffects();
                 effects.remove(DailyWorldEffects.STRONG_SPIRIT);
                 effects.add(DailyWorldEffects.USED_STRONG_SPIRIT);
-                player.sendSystemMessage(Component.translatable("craftminedailies.strong_spirit.saved"));
-                player.setHealth(1f);
                 return false;
             }
 
@@ -159,8 +162,6 @@ public class CraftmineDailies implements ModInitializer {
             var ctx = new DeathEndContext(experience, DailyTimeCalculator.getActualPassedTime(player, (int) GAME_TIME_AT_START), player, damageSource);
 
             dailyEnded(ctx, inventoryMeta);
-
-            LAST_DEATH_CONTEXT = ctx;
 
             return true;
         });
@@ -294,6 +295,8 @@ public class CraftmineDailies implements ModInitializer {
 
     public static void dailyEnded(EndContext endContext, InventoryMeta meta) {
         ENDED = true;
+
+        END_TEXT = DailiesUtil.createRunDetails(endContext);
 
         ApiManager.submitRunEnd(endContext, ApiMeta.createMeta(meta));
 

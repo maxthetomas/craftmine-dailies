@@ -39,7 +39,7 @@ public abstract class HudMixin {
         var timeScaleTextWidth = minecraft.font.width(timeScaleText);
 
         var random = RandomSource.create();
-        var ts = DailyTimeCalculator.getCurrentTimeScale() - 1f;
+        var ts = DailyTimeCalculator.getCurrentShakiness();
         guiGraphics.pose().pushPose();
         if (ts > 0) {
             ts /= 2f;

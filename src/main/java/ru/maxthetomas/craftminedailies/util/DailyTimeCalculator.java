@@ -67,8 +67,18 @@ public class DailyTimeCalculator {
         return scalingFactor;
     }
 
+    public static float getCurrentShakiness() {
+        if (scalingHandler != null)
+            return scalingHandler.getShakiness();
+        return 0f;
+    }
+
     public static Component getTimeText() {
         return Component.literal(formatTimeWithoutHours(CraftmineDailies.REMAINING_TIME_CACHE / 20));
+    }
+
+    public static ITimeScalingFactor getScalingHandler() {
+        return scalingHandler;
     }
 
     public static Component getTimeScaleText() {

@@ -1,6 +1,5 @@
 package ru.maxthetomas.craftminedailies.mixin.client;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.DeathScreen;
@@ -12,7 +11,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
-import ru.maxthetomas.craftminedailies.util.TimeFormatters;
 
 import java.util.List;
 
@@ -57,19 +55,25 @@ public abstract class DeathScreenMixin extends Screen {
                     exitToTitleScreen();
                     CraftmineDailies.openLeaderboard();
                 }
-        ).bounds(this.width / 2 - 100, this.height / 4 + 72, 200, 20).build();
+        ).bounds(this.width / 2 - 100, this.height / 4 + 72 + 24 * 2, 200, 20).build();
 
         this.exitButtons.add(btn);
         addRenderableWidget(btn);
 
+        var btn2 = Button.builder(
+                Component.translatable("menu.quit"),
+                (b) -> {
+                    minecraft.stop();
+                }
+        ).bounds(this.width / 2 - 100, this.height / 4 + 72 + 24 * 3 + 10, 200, 20).build();
+
+        this.exitButtons.add(btn2);
+        addRenderableWidget(btn2);
+
         this.hardcore = true;
 
-        this.deathScore = Component.translatable("craftminedailies.death.score",
-                Component.literal(String.valueOf(CraftmineDailies.LAST_DEATH_CONTEXT.getExperience()))
-                        .withStyle(ChatFormatting.YELLOW));
-        this.timeText = Component.translatable("craftminedailies.death.time",
-                Component.literal(TimeFormatters.formatTimeWithoutHours(CraftmineDailies.REMAINING_TIME_CACHE / 20))
-                        .withStyle(ChatFormatting.YELLOW));
+        this.deathScore = Component.empty();
+        this.timeText = Component.empty();
     }
 
     @Inject(at = @At("RETURN"), method = "render")
@@ -77,6 +81,10 @@ public abstract class DeathScreenMixin extends Screen {
         if (!CraftmineDailies.isInDaily())
             return;
 
-        guiGraphics.drawCenteredString(this.font, this.timeText, this.width / 2, 112, 0xffffff);
+
+        for (int t = 0; t < CraftmineDailies.END_TEXT.size(); t++) {
+            guiGraphics.drawCenteredString(minecraft.font, CraftmineDailies.END_TEXT.get(t),
+                    this.width / 2, 97 + 12 * t, 0xFFFFFF);
+        }
     }
 }

@@ -1,31 +1,19 @@
 package ru.maxthetomas.craftminedailies.screens;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
 import ru.maxthetomas.craftminedailies.CraftmineDailies;
-import ru.maxthetomas.craftminedailies.auth.ApiManager;
 import ru.maxthetomas.craftminedailies.util.EndContext;
-import ru.maxthetomas.craftminedailies.util.TimeFormatters;
 
 public class NonDeathDailyEndScreen extends Screen {
     private final EndContext context;
-    private final Component scoreText;
-    private final Component timeText;
 
     public NonDeathDailyEndScreen(EndContext context) {
         super(Component.translatable("craftminedailies.screen.end"));
         this.context = context;
-
-        scoreText = Component.translatable("craftminedailies.screen.end.score",
-                Component.literal(String.valueOf(this.context.getExperience()))
-                        .withStyle(ChatFormatting.YELLOW));
-        timeText = Component.translatable("craftminedailies.screen.end.time",
-                Component.literal(TimeFormatters.formatTimeWithoutHours(CraftmineDailies.REMAINING_TIME_CACHE / 20))
-                        .withStyle(ChatFormatting.YELLOW));
     }
 
 
@@ -71,14 +59,9 @@ public class NonDeathDailyEndScreen extends Screen {
 
         guiGraphics.pose().popPose();
 
-
-        guiGraphics.drawCenteredString(this.font, scoreText, this.width / 2, 75, 0xFFFFFF);
-        guiGraphics.drawCenteredString(this.font, timeText, this.width / 2, 90, 0xFFFFFF);
-
-        guiGraphics.drawCenteredString(this.font, Component.translatableWithFallback("craftminedailies.screen.end.place", "Your place: %s",
-                        Component.literal(String.valueOf(
-                                ApiManager.CachedCurrentLeaderboardPlace != -1 ? ApiManager.CachedCurrentLeaderboardPlace + 1 : "???"
-                        )).withStyle(ChatFormatting.YELLOW)),
-                this.width / 2, 105, 0xFFFFFF);
+        for (int t = 0; t < CraftmineDailies.END_TEXT.size(); t++) {
+            guiGraphics.drawCenteredString(minecraft.font, CraftmineDailies.END_TEXT.get(t),
+                    this.width / 2, 75 + 12 * t, 0xFFFFFF);
+        }
     }
 }
