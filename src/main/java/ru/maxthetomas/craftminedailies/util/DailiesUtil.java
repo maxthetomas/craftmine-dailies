@@ -72,7 +72,8 @@ public class DailiesUtil {
                 Component.literal(TimeFormatters.formatTimeWithoutHours(CraftmineDailies.REMAINING_TIME_CACHE / 20))
                         .withStyle(ChatFormatting.YELLOW)));
 
-        if (DailyTimeCalculator.getScalingHandler() != null) {
+        if (DailyTimeCalculator.getScalingHandler() != null &&
+                DailyTimeCalculator.getScalingHandler() instanceof ExperienceAddictionScalingFactor) {
             list.add(Component.translatable("craftminedailies.screen.end.passed_time",
                     Component.literal(TimeFormatters.formatTimeWithoutHours(context.getPassedTime() / 20))
                             .withStyle(ChatFormatting.YELLOW)));
