@@ -335,6 +335,8 @@ public class CraftmineDailies implements ModInitializer {
     public static boolean shouldAllowDaily() {
         if (ApiManager.TodayDetails == null) return false;
         if (lastPlayedSeed == ApiManager.TodayDetails.seed()) return false;
+        if (DefaultDataPackLoader.isLoadingData()) return false;
+
         return true;
     }
 
@@ -342,7 +344,8 @@ public class CraftmineDailies implements ModInitializer {
         if (ApiManager.DailyFetchError)
             return BUTTON_TEXT_NETWORK_ISSUE;
 
-        if (ApiManager.TodayDetails == null)
+        if (ApiManager.TodayDetails == null
+                || DefaultDataPackLoader.isLoadingData())
             return BUTTON_TEXT_LOADING;
 
         if (lastPlayedSeed == ApiManager.TodayDetails.seed())

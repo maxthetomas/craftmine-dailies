@@ -44,6 +44,11 @@ public class DefaultDataPackLoader {
         return future.join();
     }
 
+    public static boolean isLoadingData() {
+        if (registries != null) return false;
+        return future != null;
+    }
+
 
     /**
      * Loads the default server registries using the WorldLoader mechanism.

@@ -36,7 +36,8 @@ import ru.maxthetomas.craftminedailies.util.TimeFormatters;
 import java.util.List;
 import java.util.Optional;
 
-import static ru.maxthetomas.craftminedailies.screens.LeaderboardScreen.*;
+import static ru.maxthetomas.craftminedailies.screens.LeaderboardScreen.getNameFromUUID;
+import static ru.maxthetomas.craftminedailies.screens.LeaderboardScreen.getOrAddCache;
 
 public class RunDetailsScreen extends Screen {
     private static final ResourceLocation CONTAINER_BACKGROUND = ResourceLocation.withDefaultNamespace("textures/gui/container/generic_54.png");
@@ -130,7 +131,7 @@ public class RunDetailsScreen extends Screen {
 
         var playerRenderState = new PlayerRenderState();
         playerRenderState.ageInTicks = timeRenderingScreen;
-        playerRenderState.skin = profiles.get(details.playerUuid()).skin();
+        playerRenderState.skin = getOrAddCache(minecraft, details.playerUuid());
         playerRenderState.xRot = 0.03f * (this.yMouse - this.height / 4f);
         playerRenderState.bodyRot = (float) Math.toDegrees((double) rotCalc * -0.7d);
 
